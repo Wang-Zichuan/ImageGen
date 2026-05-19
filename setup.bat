@@ -7,9 +7,15 @@ echo.
 
 where uv >nul 2>&1
 if %errorlevel% neq 0 (
-    echo [ERROR] uv not found. Install it first: https://docs.astral.sh/uv/getting-started/installation/
-    pause
-    exit /b 1
+    echo [TIP] uv not found. Installing uv...
+    powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+    if %errorlevel% neq 0 (
+        echo [ERROR] Failed to install uv. Please install manually: https://docs.astral.sh/uv/getting-started/installation/
+        pause
+        exit /b 1
+    )
+    echo [OK] uv installed successfully.
+    echo.
 )
 
 if not exist config.json (
