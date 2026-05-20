@@ -76,150 +76,483 @@ def inject_style() -> None:
     st.markdown(
         """
         <style>
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
           :root {
-            --app-bg: #f6f7fb;
+            --app-bg: #f8f9fc;
             --panel: #ffffff;
-            --ink: #101828;
-            --muted: #667085;
-            --line: #e4e7ec;
-            --accent: #ef4444;
-            --accent-2: #0ea5e9;
+            --ink: #0b0f1a;
+            --ink-secondary: #1e293b;
+            --muted: #64748b;
+            --muted-light: #94a3b8;
+            --line: #e2e8f0;
+            --line-light: #f1f5f9;
+            --accent: #6366f1;
+            --accent-hover: #4f46e5;
+            --accent-light: rgba(99, 102, 241, 0.08);
+            --accent-gradient: linear-gradient(135deg, #6366f1, #8b5cf6);
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03);
+            --shadow-md: 0 4px 16px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04);
+            --shadow-lg: 0 8px 32px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04);
+            --radius: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+            --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
           }
 
+          * { font-family: var(--font); }
+
           .stApp {
-            background:
-              radial-gradient(circle at 18% 0%, rgba(239, 68, 68, 0.10), transparent 28rem),
-              radial-gradient(circle at 90% 10%, rgba(14, 165, 233, 0.10), transparent 30rem),
-              var(--app-bg);
+            background: linear-gradient(160deg, #f8f9fc 0%, #f1f3f9 40%, #f8f9fc 100%);
+          }
+
+          .stApp > header { display: none; }
+
+          .block-container {
+            max-width: 1280px;
+            padding: 1.5rem 2rem 3rem;
           }
 
           [data-testid="stSidebar"] {
-            background: rgba(255, 255, 255, 0.82);
-            border-right: 1px solid rgba(228, 231, 236, 0.9);
-            backdrop-filter: blur(18px);
+            background: rgba(255,255,255,0.85);
+            border-right: 1px solid var(--line);
+            backdrop-filter: blur(24px);
+            padding: 1.5rem 0.5rem;
           }
 
-          [data-testid="stSidebar"] h2,
+          [data-testid="stSidebar"] > div:first-child {
+            padding-top: 0;
+          }
+
+          [data-testid="stSidebar"] h2 {
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            color: var(--muted-light);
+            margin: 1.25rem 0 0.5rem;
+            padding: 0 0.75rem;
+          }
+
           [data-testid="stSidebar"] h3 {
-            letter-spacing: 0;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--ink-secondary);
+            margin: 0.75rem 0 0.25rem;
+            padding: 0 0.75rem;
           }
 
-          .block-container {
-            max-width: 1180px;
-            padding-top: 3rem;
+          [data-testid="stSidebar"] .stTextInput input,
+          [data-testid="stSidebar"] .stSelectbox div[data-baseweb="select"] > div {
+            font-size: 0.8125rem;
+          }
+
+          [data-testid="stSidebar"] .stNumberInput input {
+            font-size: 0.8125rem;
+          }
+
+          [data-testid="stSidebar"] [data-testid="baseButton-secondary"] {
+            font-size: 0.8125rem;
+          }
+
+          [data-testid="stSidebar"] [data-testid="stCaptionContainer"] {
+            font-size: 0.75rem;
+            color: var(--muted);
           }
 
           .hero {
-            align-items: end;
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-md);
             display: flex;
-            gap: 20px;
+            align-items: center;
             justify-content: space-between;
-            margin-bottom: 22px;
+            margin-bottom: 1.75rem;
+            padding: 1.5rem 2rem;
+            position: relative;
+            overflow: hidden;
           }
 
+          .hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: var(--accent-gradient);
+            opacity: 0.04;
+            border-radius: inherit;
+          }
+
+          .hero-left { position: relative; z-index: 1; }
+
           .hero h1 {
+            font-size: clamp(1.5rem, 3vw, 2rem);
+            font-weight: 800;
+            letter-spacing: -0.02em;
             color: var(--ink);
-            font-size: clamp(34px, 5vw, 58px);
-            letter-spacing: 0;
-            line-height: 1;
             margin: 0;
+            line-height: 1.25;
+          }
+
+          .hero h1 span {
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
           }
 
           .hero p {
             color: var(--muted);
-            font-size: 15px;
-            margin: 10px 0 0;
+            font-size: 0.875rem;
+            margin: 0.25rem 0 0;
+            line-height: 1.5;
+          }
+
+          .hero-right {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-shrink: 0;
           }
 
           .status-chip {
-            background: #101828;
+            background: var(--accent-light);
+            border: 1px solid rgba(99,102,241,0.15);
             border-radius: 999px;
-            color: #fff;
-            font-size: 13px;
-            font-weight: 650;
-            padding: 10px 14px;
+            color: var(--accent);
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.4rem 0.9rem;
             white-space: nowrap;
           }
 
+          .status-dot {
+            display: inline-block;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--success);
+            margin-right: 0.35rem;
+            vertical-align: middle;
+            animation: pulse-dot 2s ease-in-out infinite;
+          }
+
+          @keyframes pulse-dot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+          }
+
+          .sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.25rem 0.75rem 0.5rem;
+            margin-bottom: 0.5rem;
+          }
+
+          .sidebar-logo svg {
+            width: 28px;
+            height: 28px;
+          }
+
+          .sidebar-logo span {
+            font-size: 1.1rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            color: var(--ink);
+          }
+
+          .sidebar-logo span small {
+            font-size: 0.65rem;
+            font-weight: 500;
+            color: var(--muted-light);
+            letter-spacing: 0;
+          }
+
+          [data-testid="stTabs"] {
+            margin-top: 0.25rem;
+          }
+
           [data-testid="stTabs"] [role="tablist"] {
-            border-bottom: 1px solid var(--line);
-            gap: 10px;
+            background: var(--line-light);
+            border-radius: var(--radius);
+            border: 1px solid var(--line);
+            gap: 2px;
+            padding: 3px;
           }
 
           [data-testid="stTabs"] button[role="tab"] {
-            border-radius: 12px 12px 0 0;
-            font-weight: 650;
-            padding: 12px 18px;
+            border: none;
+            border-radius: calc(var(--radius) - 3px);
+            font-size: 0.8125rem;
+            font-weight: 600;
+            color: var(--muted);
+            padding: 0.45rem 1rem;
+            transition: all 0.2s ease;
+          }
+
+          [data-testid="stTabs"] button[role="tab"]:hover {
+            color: var(--ink-secondary);
+            background: rgba(255,255,255,0.6);
+          }
+
+          [data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
+            background: var(--panel);
+            color: var(--ink);
+            box-shadow: var(--shadow-sm);
           }
 
           [data-testid="stTextArea"] textarea,
           [data-testid="stTextInput"] input,
           [data-testid="stNumberInput"] input,
           [data-testid="stSelectbox"] div[data-baseweb="select"] > div {
-            border-radius: 14px;
+            border-radius: var(--radius);
+            border: 1.5px solid var(--line);
+            font-size: 0.875rem;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+          }
+
+          [data-testid="stTextArea"] textarea:focus,
+          [data-testid="stTextInput"] input:focus,
+          [data-testid="stNumberInput"] input:focus,
+          [data-testid="stSelectbox"] div[data-baseweb="select"] > div:focus-within {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-light);
           }
 
           .stButton button,
           .stDownloadButton button {
-            border-radius: 14px;
-            font-weight: 700;
-            min-height: 44px;
+            border-radius: var(--radius);
+            font-weight: 600;
+            font-size: 0.875rem;
+            height: 2.5rem;
+            transition: all 0.2s ease;
           }
 
           .stButton button[kind="primary"] {
-            background: linear-gradient(135deg, var(--accent), #fb7185);
-            border: 0;
-            box-shadow: 0 12px 28px rgba(239, 68, 68, 0.22);
+            background: var(--accent-gradient);
+            color: #fff;
+            border: none;
+            box-shadow: 0 4px 14px rgba(99,102,241,0.3);
+            height: 2.75rem;
+            font-weight: 700;
+            font-size: 0.9375rem;
           }
 
-          .section-card {
-            background: var(--panel);
+          .stButton button[kind="primary"]:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(99,102,241,0.4);
+          }
+
+          .stButton button[kind="primary"]:active {
+            transform: translateY(0);
+          }
+
+          .stButton button[kind="primary"]:disabled {
+            opacity: 0.5;
+            box-shadow: none;
+          }
+
+          [data-testid="baseButton-secondary"] {
+            border: 1.5px solid var(--line) !important;
+          }
+
+          [data-testid="stExpander"] {
             border: 1px solid var(--line);
-            border-radius: 18px;
-            padding: 18px;
+            border-radius: var(--radius);
+            background: var(--panel);
+            margin: 0.75rem 0;
+          }
+
+          [data-testid="stExpander"] summary {
+            font-weight: 600;
+            font-size: 0.8125rem;
+            color: var(--ink-secondary);
+            padding: 0.6rem 1rem;
+          }
+
+          [data-testid="stExpander"] [data-testid="stExpanderContent"] {
+            padding: 0 1rem 1rem;
           }
 
           .section-title {
+            font-size: 1rem;
+            font-weight: 700;
             color: var(--ink);
-            font-size: 17px;
-            font-weight: 750;
-            margin: 0 0 6px;
+            margin: 0 0 0.25rem;
           }
 
           .section-subtitle {
+            font-size: 0.8125rem;
             color: var(--muted);
-            font-size: 13px;
-            margin: 0 0 14px;
+            margin: 0 0 1rem;
+            line-height: 1.5;
           }
 
           .uploaded-pill {
-            background: #f9fafb;
-            border: 1px solid var(--line);
+            background: var(--accent-light);
+            border: 1px solid rgba(99,102,241,0.12);
             border-radius: 999px;
-            color: #344054;
+            color: var(--accent);
             display: inline-block;
-            font-size: 12px;
-            margin: 4px 6px 4px 0;
-            padding: 7px 10px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin: 0.25rem 0.4rem 0.25rem 0;
+            padding: 0.3rem 0.7rem;
           }
 
           .history-card {
             background: var(--panel);
             border: 1px solid var(--line);
-            border-radius: 14px;
-            padding: 16px;
-            margin-bottom: 12px;
+            border-radius: var(--radius-lg);
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            box-shadow: var(--shadow-sm);
+            transition: box-shadow 0.2s ease;
+          }
+
+          .history-card:hover {
+            box-shadow: var(--shadow-md);
           }
 
           .history-meta {
             color: var(--muted);
-            font-size: 12px;
+            font-size: 0.75rem;
+          }
+
+          .history-mode-badge {
+            display: inline-block;
+            background: var(--accent-light);
+            border-radius: 6px;
+            color: var(--accent);
+            font-size: 0.6875rem;
+            font-weight: 600;
+            padding: 0.2rem 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
           }
 
           .history-prompt {
-            color: var(--ink);
-            font-size: 14px;
-            margin-top: 4px;
+            color: var(--ink-secondary);
+            font-size: 0.875rem;
+            margin-top: 0.35rem;
+            line-height: 1.5;
+          }
+
+          .stAlert {
+            border-radius: var(--radius);
+            border: none;
+          }
+
+          [data-testid="stAlert"] {
+            border-radius: var(--radius);
+            padding: 0.75rem 1rem;
+          }
+
+          .stAlert > div:first-child {
+            font-size: 0.8125rem;
+          }
+
+          [data-testid="stImage"] {
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow-sm);
+          }
+
+          [data-testid="stImage"] img {
+            border-radius: var(--radius);
+            transition: transform 0.3s ease;
+          }
+
+          [data-testid="stImage"]:hover img {
+            transform: scale(1.02);
+          }
+
+          .stDownloadButton button {
+            background: var(--panel);
+            border: 1.5px solid var(--line);
+            font-size: 0.8125rem;
+            height: 2.25rem;
+          }
+
+          .stDownloadButton button:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-light);
+          }
+
+          hr {
+            border-color: var(--line) !important;
+            margin: 1.25rem 0 !important;
+          }
+
+          [data-testid="stProgress"] {
+            border-radius: 999px;
+            overflow: hidden;
+          }
+
+          [data-testid="stProgress"] > div {
+            background: var(--accent-gradient) !important;
+          }
+
+          [data-testid="stInfo"] {
+            background: var(--accent-light);
+            color: var(--accent);
+          }
+
+          [data-testid="stNotification"] {
+            border-radius: var(--radius);
+          }
+
+          .stCheckbox label {
+            font-size: 0.8125rem;
+            font-weight: 500;
+          }
+
+          .stCheckbox [data-baseweb="checkbox"] span {
+            background-color: var(--accent) !important;
+            border-color: var(--accent) !important;
+          }
+
+          [data-testid="stFileUploader"] section {
+            border: 1.5px dashed var(--line);
+            border-radius: var(--radius);
+            padding: 0.75rem;
+            background: var(--line-light);
+            transition: border-color 0.2s ease, background 0.2s ease;
+          }
+
+          [data-testid="stFileUploader"] section:hover {
+            border-color: var(--accent);
+            background: var(--accent-light);
+          }
+
+          [data-testid="stFileUploader"] button {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            font-size: 0.8125rem;
+          }
+
+          .st-emotion-cache-1q7spjk {
+            border-radius: var(--radius);
+          }
+
+          div[data-testid="column"] {
+            gap: 0.75rem;
+          }
+
+          @media (max-width: 768px) {
+            .hero {
+              flex-direction: column;
+              align-items: flex-start;
+              padding: 1.25rem;
+            }
+            .hero-right { margin-top: 0.5rem; }
+            .block-container { padding: 1rem; }
           }
         </style>
         """,
@@ -605,7 +938,7 @@ def tab_batch(settings: Dict[str, Any], config: Dict[str, str]) -> None:
 
 
 def tab_history(settings: Dict[str, Any]) -> None:
-    st.markdown('<p class="section-title">\u751f\u6210\u5386\u53f2</p>', unsafe_allow_html=True)
+    st.markdown('<p class="section-title">\u5386\u53f2\u8bb0\u5f55</p>', unsafe_allow_html=True)
 
     entries = list_history(limit=200)
 
@@ -613,20 +946,20 @@ def tab_history(settings: Dict[str, Any]) -> None:
         st.info("\u8fd8\u6ca1\u6709\u751f\u6210\u8bb0\u5f55\u3002\u5f00\u59cb\u751f\u6210\u56fe\u7247\u540e\uff0c\u5386\u53f2\u8bb0\u5f55\u4f1a\u81ea\u52a8\u4fdd\u5b58\u3002")
         return
 
-    col_mode = st.columns([1, 3, 1])
-    with col_mode[0]:
+    filter_col1, filter_col2, filter_col3 = st.columns([1, 2, 1])
+    with filter_col1:
         mode_filter = st.selectbox(
-            "\u7b5b\u9009\u6a21\u5f0f",
+            "\u6a21\u5f0f",
             ["\u5168\u90e8", "generate", "edit", "batch"],
             key="history-mode-filter",
         )
-
-    search_query = st.text_input("\u641c\u7d22\u63d0\u793a\u8bcd", key="history-search")
-    clear_col1, clear_col2 = st.columns([1, 5])
-    with clear_col1:
-        if st.button("\u6e05\u7a7a\u5386\u53f2", type="secondary"):
+    with filter_col2:
+        search_query = st.text_input("\u641c\u7d22\u63d0\u793a\u8bcd", placeholder="\u8f93\u5165\u5173\u952e\u8bcd\u8fc7\u6ee4...", key="history-search")
+    with filter_col3:
+        st.write("")
+        if st.button("\u6e05\u7a7a\u5386\u53f2", use_container_width=True, type="secondary"):
             count = clear_history()
-            st.success(f"\u5df2\u6e05\u9664 {count} \u6761\u5386\u53f2\u8bb0\u5f55")
+            st.success(f"\u5df2\u6e05\u9664 {count} \u6761\u8bb0\u5f55")
             st.rerun()
 
     filtered = entries
@@ -638,34 +971,38 @@ def tab_history(settings: Dict[str, Any]) -> None:
     mode_label = {"generate": "\u751f\u6210", "edit": "\u7f16\u8f91", "batch": "\u6279\u91cf"}
 
     for entry in filtered:
-        with st.container():
-            label = mode_label.get(entry.mode, entry.mode)
-            col_info, col_del = st.columns([6, 1])
-            with col_info:
-                st.markdown(
-                    f"**#{entry.id}** &nbsp; `[{label}]` &nbsp; <span class='history-meta'>{entry.created_at}</span>",
-                    unsafe_allow_html=True,
-                )
-                st.markdown(f"<div class='history-prompt'>{entry.prompt[:120]}</div>", unsafe_allow_html=True)
-            with col_del:
-                if st.button("\u2716", key=f"del-{entry.id}"):
-                    delete_history_entry(entry.id)
-                    st.rerun()
+        st.markdown('<div class="history-card">', unsafe_allow_html=True)
+        label = mode_label.get(entry.mode, entry.mode)
+        col_info, col_del = st.columns([6, 1])
+        with col_info:
+            st.markdown(
+                f"<span class='history-mode-badge'>{label}</span>"
+                f" &nbsp; <span class='history-meta'>#{entry.id} &middot; {entry.created_at}</span>",
+                unsafe_allow_html=True,
+            )
+            st.markdown(f"<div class='history-prompt'>{entry.prompt[:150]}</div>", unsafe_allow_html=True)
+        with col_del:
+            if st.button("\u2716", key=f"del-{entry.id}"):
+                delete_history_entry(entry.id)
+                st.rerun()
 
-            image_dir = get_history_image_path(entry.id, "")
-            for img_file in entry.image_files:
+        image_dir = get_history_image_path(entry.id, "")
+        if entry.image_files:
+            img_cols = st.columns(min(3, len(entry.image_files)))
+            for idx, img_file in enumerate(entry.image_files):
                 img_path = image_dir / img_file if isinstance(image_dir, Path) else Path(str(image_dir)) / img_file
                 if img_path.exists():
-                    st.image(str(img_path), use_container_width=True)
-                    with open(str(img_path), "rb") as f:
-                        st.download_button(
-                            "\u4e0b\u8f7d",
-                            data=f.read(),
-                            file_name=img_file,
-                            mime=f"image/{entry.settings.get('output_format', 'png')}",
-                            key=f"hdl-{entry.id}-{img_file}",
-                        )
-            st.divider()
+                    with img_cols[idx % len(img_cols)]:
+                        st.image(str(img_path), use_container_width=True)
+                        with open(str(img_path), "rb") as f:
+                            st.download_button(
+                                "\u4e0b\u8f7d",
+                                data=f.read(),
+                                file_name=img_file,
+                                mime=f"image/{entry.settings.get('output_format', 'png')}",
+                                key=f"hdl-{entry.id}-{img_file}",
+                            )
+        st.markdown('</div>', unsafe_allow_html=True)
 
 
 def main() -> None:
@@ -673,6 +1010,21 @@ def main() -> None:
     inject_style()
 
     config = load_config()
+
+    st.sidebar.markdown(
+        """
+        <div class="sidebar-logo">
+          <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="32" height="32" rx="8" fill="url(#glogo)"/>
+            <path d="M16 6c-2 0-3.5 1.5-3.5 3.5 0 1.2.6 2.3 1.5 2.9v2.1l-4 2.3v-4.4a3.5 3.5 0 10-2 0v6.2l6 3.5V24a3.5 3.5 0 102 0v-1.9l4-2.3v-4.4a3.5 3.5 0 001.5-2.9C19.5 7.5 18 6 16 6z" fill="#fff"/>
+            <defs><linearGradient id="glogo" x1="0" y1="0" x2="32" y2="32"><stop stop-color="#6366f1"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs>
+          </svg>
+          <span>ImageGen <small>v0.1</small></span>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
     settings = connection_panel(config)
 
     st.sidebar.divider()
@@ -684,18 +1036,20 @@ def main() -> None:
     st.markdown(
         """
         <div class="hero">
-          <div>
-            <h1>ImageGen</h1>
-            <p>\u4e00\u4e2a\u9762\u5411\u521b\u4f5c\u548c\u53c2\u8003\u56fe\u7f16\u8f91\u7684\u672c\u5730\u56fe\u7247\u751f\u6210\u63a7\u5236\u53f0\u3002</p>
+          <div class="hero-left">
+            <h1>Image<span>Gen</span></h1>
+            <p>Local image generation console \u2014 create, edit, and batch-generate with any OpenAI-compatible API.</p>
           </div>
-          <div class="status-chip">OpenAI-compatible API</div>
+          <div class="hero-right">
+            <div class="status-chip"><span class="status-dot"></span>API Connected</div>
+          </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
     tab_generate_tab, tab_edit_tab, tab_batch_tab, tab_history_tab = st.tabs(
-        ["\u751f\u6210", "\u7f16\u8f91\uff08\u56fe\u751f\u56fe\uff09", "\u6279\u91cf\u751f\u6210", "\u5386\u53f2\u8bb0\u5f55"]
+        ["\u751f\u6210", "\u56fe\u751f\u56fe", "\u6279\u91cf", "\u5386\u53f2"]
     )
 
     with tab_generate_tab:
