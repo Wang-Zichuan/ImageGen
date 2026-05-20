@@ -62,7 +62,12 @@ def create_client(base_url: Optional[str] = None, api_key: Optional[str] = None)
         val = os.environ.get(env_var)
         if val and not os.path.exists(val):
             del os.environ[env_var]
-    kwargs: Dict[str, Any] = {}
+    for env_var in ("HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy"):
+        os.environ.pop(env_var, None)
+    os.environ["NO_PROXY"] = "*"
+    import httpx
+    http_client = httpx.Client(verify=False)
+    kwargs: Dict[str, Any] = {"http_client": http_client}
     if base_url:
         kwargs["base_url"] = base_url
     if api_key:
@@ -308,12 +313,17 @@ def edit_images(
                 raise
             curl_payload = dict(payload)
             curl_payload.pop("image", None)
-            response = curl_multipart_request(
-                endpoint_url(settings["base_url"], "/images/edits"),
-                curl_payload,
-                image_paths,
-                settings.get("api_key") or os.getenv("OPENAI_API_KEY", ""),
-            )
+            try:
+                response = curl_multipart_request(
+                    endpoint_url(settings["base_url"], "/images/edits"),
+                    curl_payload,
+                    image_paths,
+                    settings.get("api_key") or os.getenv("OPENAI_API_KEY", ""),
+                )
+            except subprocess.TimeoutExpired:
+                raise RuntimeError(
+                    f"Edit request timed out. Model '{settings['model']}' may not support the edit endpoint."
+                )
             return response_json_to_images(response), "curl fallback"
 
 
