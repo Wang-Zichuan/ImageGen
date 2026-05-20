@@ -88,7 +88,7 @@ def download_url_with_curl(url: str) -> bytes:
         response_path = Path(response_file.name)
     try:
         completed = subprocess.run(
-            ["curl.exe", "-sS", "-L", url, "-o", str(response_path)],
+            ["curl.exe", "-sS", "-L", "-k", url, "-o", str(response_path)],
             capture_output=True,
             text=True,
             timeout=180,
@@ -119,7 +119,7 @@ def curl_json_request(url: str, payload: Dict[str, Any], api_key: str) -> Dict[s
         response_path = Path(response_file.name)
     try:
         command = [
-            "curl.exe", "-sS", "-X", "POST", url,
+            "curl.exe", "-sS", "-X", "POST", "-k", url,
             "-H", f"Authorization: Bearer {api_key}",
             "-H", "Content-Type: application/json",
             "--data-binary", f"@{payload_path}",
@@ -147,7 +147,7 @@ def curl_multipart_request(
     with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as response_file:
         response_path = Path(response_file.name)
     command = [
-        "curl.exe", "-sS", "-X", "POST", url,
+        "curl.exe", "-sS", "-X", "POST", "-k", url,
         "-H", f"Authorization: Bearer {api_key}",
     ]
     for key, value in payload.items():

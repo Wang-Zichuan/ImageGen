@@ -23,7 +23,7 @@ if not exist config.json (
     echo [TIP] config.json created. Please edit it and fill in your API Key.
 )
 
-echo [1/2] Installing dependencies...
+echo [1/3] Installing dependencies...
 uv sync
 if %errorlevel% neq 0 (
     echo [ERROR] Failed to install dependencies.
@@ -32,8 +32,17 @@ if %errorlevel% neq 0 (
 )
 
 echo.
-echo [2/2] Verifying installation...
-uv run python -c "import streamlit, openai, PIL; print('All dependencies OK')" 2>nul
+echo [2/3] Installing project package...
+uv pip install -e .
+if %errorlevel% neq 0 (
+    echo [ERROR] Failed to install project package.
+    pause
+    exit /b 1
+)
+
+echo.
+echo [3/3] Verifying installation...
+uv run python -c "import imagegen; import streamlit, openai, PIL; print('All dependencies OK')" 2>nul
 if %errorlevel% neq 0 (
     echo [ERROR] Dependency verification failed.
     pause
