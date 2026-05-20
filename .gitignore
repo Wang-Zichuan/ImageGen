@@ -9,7 +9,7 @@ wheels/
 # Virtual environments
 .venv
 
-# Output
+# Output & history
 output/
 
 # Logs
@@ -23,12 +23,16 @@ output/
 .DS_Store
 Thumbs.db
 
-# Config with secrets
+# Config with secrets (copy config.example.json instead)
 config.json
 
-# Skill metadata
+# Skill metadata (legacy)
 .skill-meta.json
 SKILL.md.bak
 
 # Old scripts (legacy)
 scripts/
+
+# Streamlit
+streamlit.log
+streamlit.err.log
