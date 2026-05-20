@@ -41,6 +41,18 @@ def load_config() -> Dict[str, str]:
     return {str(k): str(v) for k, v in raw.items() if v is not None}
 
 
+def save_config(settings: Dict[str, Any]) -> None:
+    CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    data = {
+        "base_url": settings.get("base_url", ""),
+        "api_key": settings.get("api_key", ""),
+        "model": settings.get("model", "gpt-image-2"),
+        "size": settings.get("size", "1024x1024"),
+        "quality": settings.get("quality", "medium"),
+    }
+    CONFIG_PATH.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+
 def normalize_api_base(base_url: str) -> str:
     return base_url.strip().rstrip("/")
 

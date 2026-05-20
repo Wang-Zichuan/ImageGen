@@ -11,6 +11,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 from imagegen.core import (
+    CONFIG_PATH,
     OUTPUT_DIR,
     augment_prompt_fields,
     create_client,
@@ -19,6 +20,7 @@ from imagegen.core import (
     generate_images,
     load_config,
     normalize_api_base,
+    save_config,
     validate_payload,
 )
 from imagegen.history import (
@@ -673,6 +675,12 @@ def main() -> None:
     config = load_config()
     settings = connection_panel(config)
 
+    st.sidebar.divider()
+    if st.sidebar.button("Save Settings", use_container_width=True):
+        save_config(settings)
+        st.sidebar.success("Settings saved! Will load on next launch.")
+    st.sidebar.caption(f"Output: {OUTPUT_DIR}")
+
     st.markdown(
         """
         <div class="hero">
@@ -701,9 +709,6 @@ def main() -> None:
 
     with tab_history_tab:
         tab_history(settings)
-
-    st.sidebar.divider()
-    st.sidebar.caption(f"\u8f93\u51fa\u76ee\u5f55\uff1a{OUTPUT_DIR}")
 
 
 if __name__ == "__main__":
