@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -71,7 +72,7 @@ def save_to_history(
 ) -> HistoryEntry:
     history_dir = _ensure_history_dir()
     timestamp = datetime.now()
-    entry_id = timestamp.strftime("%Y%m%d_%H%M%S_%f")
+    entry_id = f"{timestamp.strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}"
     entry_dir = history_dir / entry_id
     entry_dir.mkdir(parents=True, exist_ok=True)
 

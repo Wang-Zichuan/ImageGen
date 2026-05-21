@@ -712,7 +712,7 @@ def render_gallery(images: List[bytes], output_format: str) -> None:
     cols = st.columns(min(3, len(images)))
     for index, image_bytes in enumerate(images, start=1):
         with cols[(index - 1) % len(cols)]:
-            st.image(image_bytes, use_container_width=True)
+            st.image(image_bytes, width='stretch')
             filename = f"image_{index}.{ext}"
             st.download_button(
                 "\u4e0b\u8f7d\u56fe\u7247",
@@ -755,7 +755,7 @@ def render_reference_picker(key_prefix: str) -> List[ReferenceImage]:
         preview_cols = st.columns(min(4, len(references)))
         for index, ref in enumerate(references):
             with preview_cols[index % len(preview_cols)]:
-                st.image(ref.data, use_container_width=True)
+                st.image(ref.data, width='stretch')
     return references
 
 
@@ -957,7 +957,7 @@ def tab_history(settings: Dict[str, Any]) -> None:
         search_query = st.text_input("\u641c\u7d22\u63d0\u793a\u8bcd", placeholder="\u8f93\u5165\u5173\u952e\u8bcd\u8fc7\u6ee4...", key="history-search")
     with filter_col3:
         st.write("")
-        if st.button("\u6e05\u7a7a\u5386\u53f2", use_container_width=True, type="secondary"):
+        if st.button("\u6e05\u7a7a\u5386\u53f2", width='stretch', type="secondary"):
             count = clear_history()
             st.success(f"\u5df2\u6e05\u9664 {count} \u6761\u8bb0\u5f55")
             st.rerun()
@@ -993,7 +993,7 @@ def tab_history(settings: Dict[str, Any]) -> None:
                 img_path = image_dir / img_file if isinstance(image_dir, Path) else Path(str(image_dir)) / img_file
                 if img_path.exists():
                     with img_cols[idx % len(img_cols)]:
-                        st.image(str(img_path), use_container_width=True)
+                        st.image(str(img_path), width='stretch')
                         with open(str(img_path), "rb") as f:
                             st.download_button(
                                 "\u4e0b\u8f7d",
@@ -1028,7 +1028,7 @@ def main() -> None:
     settings = connection_panel(config)
 
     st.sidebar.divider()
-    if st.sidebar.button("Save Settings", use_container_width=True):
+    if st.sidebar.button("Save Settings", width='stretch'):
         save_config(settings)
         st.sidebar.success("Settings saved! Will load on next launch.")
     st.sidebar.caption(f"Output: {OUTPUT_DIR}")

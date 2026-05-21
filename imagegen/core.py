@@ -49,7 +49,12 @@ def save_config(settings: Dict[str, Any]) -> None:
         "model": settings.get("model", "gpt-image-2"),
         "size": settings.get("size", "1024x1024"),
         "quality": settings.get("quality", "medium"),
+        "output_format": settings.get("output_format", "png"),
+        "n": settings.get("n", 1),
+        "background": settings.get("background"),
+        "moderation": settings.get("moderation"),
     }
+    data = {k: v for k, v in data.items() if v is not None}
     CONFIG_PATH.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
@@ -66,7 +71,8 @@ def create_client(base_url: Optional[str] = None, api_key: Optional[str] = None)
         os.environ.pop(env_var, None)
     os.environ["NO_PROXY"] = "*"
     import httpx
-    http_client = httpx.Client(verify=False)
+    verify_ssl = os.environ.get("IMAGE_GEN_VERIFY_SSL", "1") not in ("0", "false", "no")
+    http_client = httpx.Client(verify=verify_ssl)
     kwargs: Dict[str, Any] = {"http_client": http_client}
     if base_url:
         kwargs["base_url"] = base_url
@@ -292,11 +298,11 @@ def edit_images(
         base_url=settings.get("base_url") or None,
         api_key=settings.get("api_key") or None,
     )
-    with _open_files(image_paths) as image_files:
+    with _open_files(image_paths[:1]) as image_files:
         payload = {
             "model": settings["model"],
             "prompt": prompt,
-            "image": image_files if len(image_files) > 1 else image_files[0],
+            "image": image_files[0],
             "n": settings["n"],
             "size": settings["size"],
             "quality": settings["quality"],
@@ -317,7 +323,7 @@ def edit_images(
                 response = curl_multipart_request(
                     endpoint_url(settings["base_url"], "/images/edits"),
                     curl_payload,
-                    image_paths,
+                    image_paths[:1],
                     settings.get("api_key") or os.getenv("OPENAI_API_KEY", ""),
                 )
             except subprocess.TimeoutExpired:
