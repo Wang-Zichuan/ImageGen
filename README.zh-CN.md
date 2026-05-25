@@ -68,7 +68,7 @@ uv run streamlit run imagegen/app.py --server.port 8502
 | `size` | 默认图片尺寸 | `1024x1024` |
 | `quality` | 图片质量（low/medium/high/auto） | `medium` |
 
-也可通过环境变量 `OPENAI_BASE_URL` 和 `OPENAI_API_KEY` 配置，优先级高于 `config.json`。
+也可通过环境变量 `OPENAI_BASE_URL` 和 `OPENAI_API_KEY` 配置；如果同时存在 `config.json`，界面会优先加载配置文件中的值。
 
 ## 项目结构
 

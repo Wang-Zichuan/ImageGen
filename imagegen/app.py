@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import base64
+import html
 import json
 import os
 import tempfile
@@ -40,6 +41,7 @@ clipboard_image = components.declare_component(
 )
 
 RATIO_PRESETS: Dict[str, Tuple[int, int]] = {
+    "\u81ea\u52a8": (0, 0),
     "1:1": (1024, 1024),
     "1:1 (2K)": (2048, 2048),
     "4:3": (1280, 960),
@@ -605,11 +607,41 @@ def pasted_payload_to_references(payload: Optional[Dict[str, Any]]) -> List[Refe
     return [ReferenceImage(name=name, data=raw)]
 
 
-def make_size_selector() -> str:
-    preset = st.sidebar.selectbox("\u6bd4\u4f8b", list(RATIO_PRESETS.keys()), index=0)
+def _selectbox_index(options: List[Any], value: Any, default: int = 0) -> int:
+    try:
+        return options.index(value)
+    except ValueError:
+        return default
+
+
+def _config_optional_select_value(config: Dict[str, str], key: str, default_label: str) -> str:
+    value = config.get(key)
+    return default_label if value in (None, "") else value
+
+
+def make_size_selector(config: Dict[str, str]) -> str:
+    saved_size = config.get("size", "")
+    preset_options = list(RATIO_PRESETS.keys())
+    preset_by_size = {f"{width}x{height}": label for label, (width, height) in RATIO_PRESETS.items()}
+    preset = "\u81ea\u52a8" if saved_size == "auto" else preset_by_size.get(saved_size, "\u81ea\u5b9a\u4e49" if saved_size else "1:1")
+
+    preset = st.sidebar.selectbox(
+        "\u6bd4\u4f8b",
+        preset_options,
+        index=_selectbox_index(preset_options, preset),
+    )
     default_width, default_height = RATIO_PRESETS[preset]
 
+    if preset == "\u81ea\u52a8":
+        st.sidebar.caption("\u5c3a\u5bf8\uff1aauto")
+        return "auto"
+
     if preset == "\u81ea\u5b9a\u4e49":
+        if "x" in saved_size:
+            saved_width, saved_height = saved_size.lower().split("x", 1)
+            if saved_width.isdigit() and saved_height.isdigit():
+                default_width = min(3840, max(256, int(saved_width)))
+                default_height = min(3840, max(256, int(saved_height)))
         col_w, col_h = st.sidebar.columns(2)
         with col_w:
             width = st.number_input("\u5bbd\u5ea6", min_value=256, max_value=3840, value=default_width, step=16)
@@ -642,18 +674,36 @@ def connection_panel(config: Dict[str, str]) -> Dict[str, Any]:
     )
 
     st.sidebar.header("\u8f93\u51fa")
-    size = make_size_selector()
+    size = make_size_selector(config)
+    quality_options = ["medium", "low", "high", "auto"]
+    format_options = ["png", "jpeg", "webp"]
+    background_options = ["\u9ed8\u8ba4", "opaque", "transparent", "auto"]
+    moderation_options = ["\u9ed8\u8ba4", "auto", "low"]
     quality = st.sidebar.selectbox(
         "\u8d28\u91cf",
-        ["medium", "low", "high", "auto"],
-        index=["medium", "low", "high", "auto"].index(config.get("quality", "medium"))
-        if config.get("quality", "medium") in {"medium", "low", "high", "auto"}
-        else 0,
+        quality_options,
+        index=_selectbox_index(quality_options, config.get("quality", "medium")),
     )
-    output_format = st.sidebar.selectbox("\u683c\u5f0f", ["png", "jpeg", "webp"], index=0)
-    n = st.sidebar.number_input("\u6570\u91cf", min_value=1, max_value=10, value=1, step=1)
-    background = st.sidebar.selectbox("\u80cc\u666f", ["\u9ed8\u8ba4", "opaque", "transparent", "auto"], index=0)
-    moderation = st.sidebar.selectbox("\u5ba1\u6838", ["\u9ed8\u8ba4", "auto", "low"], index=0)
+    output_format = st.sidebar.selectbox(
+        "\u683c\u5f0f",
+        format_options,
+        index=_selectbox_index(format_options, config.get("output_format", "png")),
+    )
+    try:
+        saved_n = int(config.get("n", "1"))
+    except ValueError:
+        saved_n = 1
+    n = st.sidebar.number_input("\u6570\u91cf", min_value=1, max_value=10, value=min(10, max(1, saved_n)), step=1)
+    background = st.sidebar.selectbox(
+        "\u80cc\u666f",
+        background_options,
+        index=_selectbox_index(background_options, _config_optional_select_value(config, "background", "\u9ed8\u8ba4")),
+    )
+    moderation = st.sidebar.selectbox(
+        "\u5ba1\u6838",
+        moderation_options,
+        index=_selectbox_index(moderation_options, _config_optional_select_value(config, "moderation", "\u9ed8\u8ba4")),
+    )
 
     return {
         "base_url": normalize_api_base(base_url),
@@ -751,7 +801,7 @@ def render_reference_picker(key_prefix: str) -> List[ReferenceImage]:
     if references:
         st.markdown(
             "".join(
-                f'<span class="uploaded-pill">{index}. {ref.name}</span>'
+                f'<span class="uploaded-pill">{index}. {html.escape(ref.name)}</span>'
                 for index, ref in enumerate(references, start=1)
             ),
             unsafe_allow_html=True,
@@ -984,7 +1034,10 @@ def tab_history(settings: Dict[str, Any]) -> None:
                 f" &nbsp; <span class='history-meta'>#{entry.id} &middot; {entry.created_at}</span>",
                 unsafe_allow_html=True,
             )
-            st.markdown(f"<div class='history-prompt'>{entry.prompt[:150]}</div>", unsafe_allow_html=True)
+            st.markdown(
+                f"<div class='history-prompt'>{html.escape(entry.prompt[:150])}</div>",
+                unsafe_allow_html=True,
+            )
         with col_del:
             if st.button("\u2716", key=f"del-{entry.id}"):
                 delete_history_entry(entry.id)

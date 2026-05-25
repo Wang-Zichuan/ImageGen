@@ -24,11 +24,14 @@ DEFAULT_QUALITY = "medium"
 ALLOWED_LEGACY_SIZES = {"1024x1024", "1536x1024", "1024x1536", "auto"}
 ALLOWED_QUALITIES = {"low", "medium", "high", "auto"}
 ALLOWED_BACKGROUNDS = {"transparent", "opaque", "auto", None}
+ALLOWED_OUTPUT_FORMATS = {"png", "jpeg", "webp"}
 
 GPT_IMAGE_2_MAX_EDGE = 3840
 GPT_IMAGE_2_MIN_PIXELS = 655_360
 GPT_IMAGE_2_MAX_PIXELS = 8_294_400
 GPT_IMAGE_2_MAX_RATIO = 3.0
+
+SIZE_RE = re.compile(r"^(\d+)x(\d+)$")
 
 
 def load_config() -> Dict[str, str]:
@@ -164,8 +167,9 @@ def curl_multipart_request(
     for key, value in payload.items():
         if value is not None:
             command.extend(["-F", f"{key}={value}"])
+    image_field = "image[]" if len(image_paths) > 1 else "image"
     for path in image_paths:
-        command.extend(["-F", f"image=@{path}"])
+        command.extend(["-F", f"{image_field}=@{path}"])
     command.extend(["-o", str(response_path), "-w", "%{http_code}"])
     try:
         completed = subprocess.run(command, capture_output=True, text=True, timeout=180)
@@ -232,6 +236,36 @@ def augment_prompt_fields(augment: bool, prompt: str, fields: Dict[str, Optional
     return "\n".join(sections)
 
 
+def validate_size(model: str, size: str) -> Optional[str]:
+    if size == "auto":
+        return None
+
+    match = SIZE_RE.fullmatch(size)
+    if not match:
+        return "size must be 'auto' or formatted as WIDTHxHEIGHT."
+
+    width = int(match.group(1))
+    height = int(match.group(2))
+    if width <= 0 or height <= 0:
+        return "size width and height must be positive."
+
+    if model.startswith("gpt-image-2"):
+        pixels = width * height
+        ratio = max(width / height, height / width)
+        if width % 16 != 0 or height % 16 != 0:
+            return "gpt-image-2 sizes must be divisible by 16."
+        if width > GPT_IMAGE_2_MAX_EDGE or height > GPT_IMAGE_2_MAX_EDGE:
+            return f"gpt-image-2 width and height must be at most {GPT_IMAGE_2_MAX_EDGE}."
+        if pixels < GPT_IMAGE_2_MIN_PIXELS:
+            return f"gpt-image-2 size must contain at least {GPT_IMAGE_2_MIN_PIXELS} pixels."
+        if pixels > GPT_IMAGE_2_MAX_PIXELS:
+            return f"gpt-image-2 size must contain at most {GPT_IMAGE_2_MAX_PIXELS} pixels."
+        if ratio > GPT_IMAGE_2_MAX_RATIO:
+            return "gpt-image-2 aspect ratio must be between 1:3 and 3:1."
+
+    return None
+
+
 def validate_payload(payload: Dict[str, Any]) -> Optional[str]:
     try:
         model = str(payload.get("model", DEFAULT_MODEL))
@@ -242,9 +276,15 @@ def validate_payload(payload: Dict[str, Any]) -> Optional[str]:
             return "n must be between 1 and 10"
         size = str(payload.get("size", DEFAULT_SIZE))
         quality = str(payload.get("quality", DEFAULT_QUALITY))
+        output_format = payload.get("output_format")
         background = payload.get("background")
         if quality not in ALLOWED_QUALITIES:
             return "quality must be one of low, medium, high, or auto."
+        if output_format is not None and output_format not in ALLOWED_OUTPUT_FORMATS:
+            return "output_format must be one of png, jpeg, or webp."
+        size_error = validate_size(model, size)
+        if size_error:
+            return size_error
         if background not in ALLOWED_BACKGROUNDS:
             return "background must be one of transparent, opaque, or auto."
         if background == "transparent" and payload.get("output_format") not in (None, "png", "webp"):
@@ -298,11 +338,14 @@ def edit_images(
         base_url=settings.get("base_url") or None,
         api_key=settings.get("api_key") or None,
     )
-    with _open_files(image_paths[:1]) as image_files:
+    if not image_paths:
+        raise ValueError("At least one image is required for edits.")
+
+    with _open_files(image_paths) as image_files:
         payload = {
             "model": settings["model"],
             "prompt": prompt,
-            "image": image_files[0],
+            "image": image_files,
             "n": settings["n"],
             "size": settings["size"],
             "quality": settings["quality"],
@@ -323,7 +366,7 @@ def edit_images(
                 response = curl_multipart_request(
                     endpoint_url(settings["base_url"], "/images/edits"),
                     curl_payload,
-                    image_paths[:1],
+                    image_paths,
                     settings.get("api_key") or os.getenv("OPENAI_API_KEY", ""),
                 )
             except subprocess.TimeoutExpired:
