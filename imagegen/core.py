@@ -12,6 +12,13 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from openai import OpenAI
 
+from imagegen.chroma_key import (
+    append_chroma_key_instruction,
+    choose_chroma_key,
+    hex_color,
+    remove_chroma_key_bytes,
+)
+
 
 APP_DIR = Path(__file__).resolve().parent.parent
 CONFIG_PATH = APP_DIR / "config.json"
@@ -20,6 +27,7 @@ OUTPUT_DIR = APP_DIR / "output"
 DEFAULT_MODEL = "gpt-image-2"
 DEFAULT_SIZE = "auto"
 DEFAULT_QUALITY = "medium"
+CHROMA_KEY_TRANSPARENT_TRANSPORT_BACKGROUND = "opaque"
 
 ALLOWED_LEGACY_SIZES = {"1024x1024", "1536x1024", "1024x1536", "auto"}
 ALLOWED_QUALITIES = {"low", "medium", "high", "auto"}
@@ -289,44 +297,97 @@ def validate_payload(payload: Dict[str, Any]) -> Optional[str]:
             return "background must be one of transparent, opaque, or auto."
         if background == "transparent" and payload.get("output_format") not in (None, "png", "webp"):
             return "transparent background requires output-format png or webp."
-        if model == "gpt-image-2" and background == "transparent":
-            return "transparent backgrounds are not supported in gpt-image-2."
     except Exception as exc:
         return str(exc)
     return None
+
+
+def wants_transparent_background(settings: Dict[str, Any]) -> bool:
+    return settings.get("background") == "transparent"
+
+
+def prepare_transparent_background_request(
+    settings: Dict[str, Any],
+    prompt: str,
+) -> Tuple[Dict[str, Any], str, Optional[Tuple[int, int, int]]]:
+    if not wants_transparent_background(settings):
+        return settings, prompt, None
+
+    key_color = choose_chroma_key(prompt)
+    request_settings = dict(settings)
+    request_settings["background"] = CHROMA_KEY_TRANSPARENT_TRANSPORT_BACKGROUND
+    request_settings["output_format"] = "png"
+    return request_settings, append_chroma_key_instruction(prompt, key_color), key_color
+
+
+def finalize_transparent_background_images(
+    images: List[bytes],
+    settings: Dict[str, Any],
+    key_color: Optional[Tuple[int, int, int]],
+) -> List[bytes]:
+    if key_color is None:
+        return images
+    output_format = settings.get("output_format", "png")
+    if output_format == "jpeg":
+        output_format = "png"
+    return [
+        remove_chroma_key_bytes(
+            image,
+            key_color=key_color,
+            output_format=output_format,
+            tolerance=36,
+            soft_matte=True,
+            soft_width=48,
+            primary_chroma_alpha=True,
+            despill=True,
+            despill_amount=0.85,
+            alpha_shrink=0,
+            feather=0.5,
+        )
+        for image in images
+    ]
+
+
+def transparent_background_note(key_color: Optional[Tuple[int, int, int]]) -> str:
+    if key_color is None:
+        return ""
+    return f" + chroma-key transparency ({hex_color(key_color)})"
 
 
 def generate_images(
     settings: Dict[str, Any],
     prompt: str,
 ) -> Tuple[List[bytes], str]:
+    request_settings, request_prompt, key_color = prepare_transparent_background_request(settings, prompt)
     client = create_client(
-        base_url=settings.get("base_url") or None,
-        api_key=settings.get("api_key") or None,
+        base_url=request_settings.get("base_url") or None,
+        api_key=request_settings.get("api_key") or None,
     )
     payload = {
-        "model": settings["model"],
-        "prompt": prompt,
-        "n": settings["n"],
-        "size": settings["size"],
-        "quality": settings["quality"],
-        "output_format": settings["output_format"],
-        "background": settings.get("background"),
-        "moderation": settings.get("moderation"),
+        "model": request_settings["model"],
+        "prompt": request_prompt,
+        "n": request_settings["n"],
+        "size": request_settings["size"],
+        "quality": request_settings["quality"],
+        "output_format": request_settings["output_format"],
+        "background": request_settings.get("background"),
+        "moderation": request_settings.get("moderation"),
     }
     payload = {k: v for k, v in payload.items() if v is not None}
     try:
         result = client.images.generate(**payload)
-        return [extract_image_bytes(item) for item in result.data], "OpenAI SDK"
+        images = [extract_image_bytes(item) for item in result.data]
+        return finalize_transparent_background_images(images, settings, key_color), "OpenAI SDK" + transparent_background_note(key_color)
     except Exception as exc:
         if not should_retry_with_curl(exc):
             raise
         response = curl_json_request(
-            endpoint_url(settings["base_url"], "/images/generations"),
+            endpoint_url(request_settings["base_url"], "/images/generations"),
             payload,
-            settings.get("api_key") or os.getenv("OPENAI_API_KEY", ""),
+            request_settings.get("api_key") or os.getenv("OPENAI_API_KEY", ""),
         )
-        return response_json_to_images(response), "curl fallback"
+        images = response_json_to_images(response)
+        return finalize_transparent_background_images(images, settings, key_color), "curl fallback" + transparent_background_note(key_color)
 
 
 def edit_images(
@@ -334,29 +395,31 @@ def edit_images(
     prompt: str,
     image_paths: List[Path],
 ) -> Tuple[List[bytes], str]:
+    request_settings, request_prompt, key_color = prepare_transparent_background_request(settings, prompt)
     client = create_client(
-        base_url=settings.get("base_url") or None,
-        api_key=settings.get("api_key") or None,
+        base_url=request_settings.get("base_url") or None,
+        api_key=request_settings.get("api_key") or None,
     )
     if not image_paths:
         raise ValueError("At least one image is required for edits.")
 
     with _open_files(image_paths) as image_files:
         payload = {
-            "model": settings["model"],
-            "prompt": prompt,
+            "model": request_settings["model"],
+            "prompt": request_prompt,
             "image": image_files,
-            "n": settings["n"],
-            "size": settings["size"],
-            "quality": settings["quality"],
-            "output_format": settings["output_format"],
-            "background": settings.get("background"),
-            "moderation": settings.get("moderation"),
+            "n": request_settings["n"],
+            "size": request_settings["size"],
+            "quality": request_settings["quality"],
+            "output_format": request_settings["output_format"],
+            "background": request_settings.get("background"),
+            "moderation": request_settings.get("moderation"),
         }
         payload = {k: v for k, v in payload.items() if v is not None}
         try:
             result = client.images.edit(**payload)
-            return [extract_image_bytes(item) for item in result.data], "OpenAI SDK"
+            images = [extract_image_bytes(item) for item in result.data]
+            return finalize_transparent_background_images(images, settings, key_color), "OpenAI SDK" + transparent_background_note(key_color)
         except Exception as exc:
             if not should_retry_with_curl(exc):
                 raise
@@ -364,16 +427,17 @@ def edit_images(
             curl_payload.pop("image", None)
             try:
                 response = curl_multipart_request(
-                    endpoint_url(settings["base_url"], "/images/edits"),
+                    endpoint_url(request_settings["base_url"], "/images/edits"),
                     curl_payload,
                     image_paths,
-                    settings.get("api_key") or os.getenv("OPENAI_API_KEY", ""),
+                    request_settings.get("api_key") or os.getenv("OPENAI_API_KEY", ""),
                 )
             except subprocess.TimeoutExpired:
                 raise RuntimeError(
-                    f"Edit request timed out. Model '{settings['model']}' may not support the edit endpoint."
+                    f"Edit request timed out. Model '{request_settings['model']}' may not support the edit endpoint."
                 )
-            return response_json_to_images(response), "curl fallback"
+            images = response_json_to_images(response)
+            return finalize_transparent_background_images(images, settings, key_color), "curl fallback" + transparent_background_note(key_color)
 
 
 class _FileBundle:

@@ -704,6 +704,9 @@ def connection_panel(config: Dict[str, str]) -> Dict[str, Any]:
         moderation_options,
         index=_selectbox_index(moderation_options, _config_optional_select_value(config, "moderation", "\u9ed8\u8ba4")),
     )
+    if background == "transparent" and output_format == "jpeg":
+        st.sidebar.caption("\u900f\u660e\u80cc\u666f\u9700\u8981 alpha \u901a\u9053\uff0c\u5df2\u81ea\u52a8\u6539\u4e3a PNG \u8f93\u51fa\u3002")
+        output_format = "png"
 
     return {
         "base_url": normalize_api_base(base_url),
@@ -716,6 +719,12 @@ def connection_panel(config: Dict[str, str]) -> Dict[str, Any]:
         "background": None if background == "\u9ed8\u8ba4" else background,
         "moderation": None if moderation == "\u9ed8\u8ba4" else moderation,
     }
+
+
+def effective_output_format(settings: Dict[str, Any]) -> str:
+    if settings.get("background") == "transparent" and settings.get("output_format") == "jpeg":
+        return "png"
+    return str(settings.get("output_format", "png"))
 
 
 def prompt_panel(key_prefix: str) -> Tuple[str, Dict[str, Optional[str]], bool]:
@@ -851,7 +860,8 @@ def tab_generate(settings: Dict[str, Any], config: Dict[str, str]) -> None:
                 st.error(f"\u751f\u6210\u5931\u8d25\uff1a{exc}")
                 return
         st.caption(f"\u8fde\u63a5\u65b9\u5f0f\uff1a{transport}")
-        render_gallery(images, settings["output_format"])
+        output_format = effective_output_format(settings)
+        render_gallery(images, output_format)
 
         save_to_history(
             mode="generate",
@@ -859,7 +869,7 @@ def tab_generate(settings: Dict[str, Any], config: Dict[str, str]) -> None:
             augmented_prompt=final_prompt,
             settings=settings,
             image_bytes_list=images,
-            output_format=settings["output_format"],
+            output_format=output_format,
         )
 
 
@@ -889,7 +899,8 @@ def tab_edit(settings: Dict[str, Any], config: Dict[str, str]) -> None:
                     st.error(f"\u7f16\u8f91\u5931\u8d25\uff1a{exc}")
                     return
             st.caption(f"\u8fde\u63a5\u65b9\u5f0f\uff1a{transport}")
-            render_gallery(images, settings["output_format"])
+            output_format = effective_output_format(settings)
+            render_gallery(images, output_format)
 
             ref_names = [ref.name for ref in references]
             save_to_history(
@@ -898,7 +909,7 @@ def tab_edit(settings: Dict[str, Any], config: Dict[str, str]) -> None:
                 augmented_prompt=final_edit_prompt,
                 settings=settings,
                 image_bytes_list=images,
-                output_format=settings["output_format"],
+                output_format=output_format,
                 references=ref_names,
             )
         finally:
@@ -965,13 +976,14 @@ def tab_batch(settings: Dict[str, Any], config: Dict[str, str]) -> None:
                 images, transport = generate_images(settings, final_prompt)
                 all_results.append((raw_prompt, images, transport))
 
+                output_format = effective_output_format(settings)
                 save_to_history(
                     mode="batch",
                     prompt=raw_prompt,
                     augmented_prompt=final_prompt,
                     settings=settings,
                     image_bytes_list=images,
-                    output_format=settings["output_format"],
+                    output_format=output_format,
                 )
             except Exception as exc:
                 st.error(f"\u7b2c {idx + 1} \u4e2a\u63d0\u793a\u8bcd\u751f\u6210\u5931\u8d25\uff1a{exc}")
@@ -988,7 +1000,7 @@ def tab_batch(settings: Dict[str, Any], config: Dict[str, str]) -> None:
                     st.error(f"\u751f\u6210\u5931\u8d25: {transport}")
                 else:
                     st.caption(f"\u8fde\u63a5\u65b9\u5f0f\uff1a{transport}")
-                    render_gallery(images, settings["output_format"])
+                    render_gallery(images, effective_output_format(settings))
 
 
 def tab_history(settings: Dict[str, Any]) -> None:

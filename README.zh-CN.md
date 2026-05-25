@@ -9,6 +9,7 @@
 - **批量生成** — 一次性从多个提示词生成多张图片
 - **生成历史** — 浏览、搜索和下载所有已生成的图片
 - **灵活设置** — 自定义模型、尺寸比例、质量、格式、背景和审核控制
+- **透明背景工作流** — 当背景选择透明时，自动先生成纯色色键背景，再本地抠除为 alpha 通道
 - **API 兼容** — 支持任何 OpenAI 兼容接口（OpenAI、Azure、本地代理等）
 - **自动回退** — SDK 失败时自动回退到 curl（处理 Windows 下的 SSL 问题）
 
@@ -69,6 +70,20 @@ uv run streamlit run imagegen/app.py --server.port 8502
 | `quality` | 图片质量（low/medium/high/auto） | `medium` |
 
 也可通过环境变量 `OPENAI_BASE_URL` 和 `OPENAI_API_KEY` 配置；如果同时存在 `config.json`，界面会优先加载配置文件中的值。
+
+## 透明背景
+
+当背景选择 `transparent` 时，应用会使用两步 Chroma-Key 工作流，而不是直接要求模型输出透明图：
+
+1. 生成阶段：自动提示模型把主体放在纯色色键背景上，默认使用 `#00ff00` 绿色；如果提示词包含绿色主体相关描述，则改用 `#ff00ff` 洋红色。
+2. 抠除阶段：本地将色键色转为 alpha 通道，支持 Chebyshev 通道距离、硬键/软遮罩、主色度 alpha、溢色清理、alpha 收缩和羽化。
+
+也可以单独使用命令行工具：
+
+```bash
+uv run remove-chroma-key input.png output.png --key "#00ff00" --soft-matte --despill
+uv run python remove_chroma_key.py input.png output.png --auto-key border --soft-matte --despill
+```
 
 ## 项目结构
 
