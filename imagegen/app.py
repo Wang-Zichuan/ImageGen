@@ -656,22 +656,126 @@ def make_size_selector(config: Dict[str, str]) -> str:
     return f"{default_width}x{default_height}"
 
 
-def connection_panel(config: Dict[str, str]) -> Dict[str, Any]:
+def _provider_names(config: Dict[str, Any]) -> List[str]:
+    providers = config.get("providers", [])
+    if not isinstance(providers, list):
+        return ["Default"]
+    names = [str(provider.get("name") or "Default") for provider in providers if isinstance(provider, dict)]
+    return names or ["Default"]
+
+
+def _provider_by_name(config: Dict[str, Any], name: str) -> Dict[str, Any]:
+    providers = config.get("providers", [])
+    if isinstance(providers, list):
+        for provider in providers:
+            if isinstance(provider, dict) and str(provider.get("name") or "Default") == name:
+                return provider
+    return {
+        "name": name or "Default",
+        "base_url": os.getenv("OPENAI_BASE_URL", ""),
+        "api_key": os.getenv("OPENAI_API_KEY", ""),
+        "models": [os.getenv("IMAGE_GEN_MODEL", "gpt-image-2")],
+        "active_model": os.getenv("IMAGE_GEN_MODEL", "gpt-image-2"),
+    }
+
+
+def _parse_models(value: str, fallback: str) -> List[str]:
+    models: List[str] = []
+    for line in value.replace(",", "\n").splitlines():
+        model = line.strip()
+        if model and model not in models:
+            models.append(model)
+    fallback = fallback.strip()
+    if fallback and fallback not in models:
+        models.insert(0, fallback)
+    return models or ["gpt-image-2"]
+
+
+def _upsert_provider(config: Dict[str, Any], provider: Dict[str, Any]) -> List[Dict[str, Any]]:
+    providers = config.get("providers", [])
+    if not isinstance(providers, list):
+        providers = []
+    updated: List[Dict[str, Any]] = []
+    seen = False
+    for existing in providers:
+        if not isinstance(existing, dict):
+            continue
+        existing_name = str(existing.get("name") or "Default")
+        if existing_name == provider["name"]:
+            updated.append(provider)
+            seen = True
+        else:
+            updated.append(dict(existing))
+    if not seen:
+        updated.append(provider)
+    return updated
+
+
+def connection_panel(config: Dict[str, Any]) -> Dict[str, Any]:
     st.sidebar.header("\u8fde\u63a5")
+    provider_names = _provider_names(config)
+    active_provider = str(config.get("active_provider") or provider_names[0])
+    provider_name = st.sidebar.selectbox(
+        "Provider",
+        provider_names,
+        index=_selectbox_index(provider_names, active_provider),
+        key="provider-selector",
+    )
+    add_new_provider = st.sidebar.checkbox("Add New Provider", value=False)
+    provider = _provider_by_name(config, provider_name)
+    if add_new_provider:
+        provider = {
+            "name": "",
+            "base_url": "",
+            "api_key": "",
+            "models": [os.getenv("IMAGE_GEN_MODEL", "gpt-image-2")],
+            "active_model": os.getenv("IMAGE_GEN_MODEL", "gpt-image-2"),
+        }
+    new_provider_name = st.sidebar.text_input(
+        "Provider Name",
+        value=str(provider.get("name") or ("New Provider" if add_new_provider else provider_name)),
+        help="\u4fee\u6539\u540e\u70b9 Save Settings \u4f1a\u4fdd\u5b58\u4e3a\u8fd9\u4e2a Provider\u3002",
+    ).strip() or provider_name
     base_url = st.sidebar.text_input(
         "Base URL",
-        value=config.get("base_url") or os.getenv("OPENAI_BASE_URL", ""),
+        value=str(provider.get("base_url") or os.getenv("OPENAI_BASE_URL", "")),
         placeholder="https://api.openai.com/v1",
     )
     api_key = st.sidebar.text_input(
         "API Key",
-        value=config.get("api_key") or os.getenv("OPENAI_API_KEY", ""),
+        value=str(provider.get("api_key") or os.getenv("OPENAI_API_KEY", "")),
         type="password",
     )
-    model = st.sidebar.text_input(
+    provider_models = provider.get("models", [])
+    if not isinstance(provider_models, list):
+        provider_models = []
+    active_model = str(provider.get("active_model") or provider.get("model") or config.get("model") or "gpt-image-2")
+    models = [str(model).strip() for model in provider_models if str(model).strip()]
+    if active_model and active_model not in models:
+        models.insert(0, active_model)
+    models = models or ["gpt-image-2"]
+    model = st.sidebar.selectbox(
         "\u6a21\u578b",
-        value=config.get("model") or os.getenv("IMAGE_GEN_MODEL", "gpt-image-2"),
+        models,
+        index=_selectbox_index(models, active_model),
     )
+    models_text = st.sidebar.text_area(
+        "Provider Models",
+        value="\n".join(models),
+        height=88,
+        help="\u6bcf\u884c\u4e00\u4e2a\u6a21\u578b\uff0c\u4e5f\u652f\u6301\u9017\u53f7\u5206\u9694\u3002\u70b9 Save Settings \u540e\u8bb0\u4f4f\u3002",
+    )
+    models = _parse_models(models_text, model)
+    if model not in models:
+        models.insert(0, model)
+    current_provider = {
+        "name": new_provider_name,
+        "base_url": normalize_api_base(base_url),
+        "api_key": api_key.strip(),
+        "models": models,
+        "active_model": model,
+    }
+    providers = _upsert_provider(config, current_provider)
 
     st.sidebar.header("\u8f93\u51fa")
     size = make_size_selector(config)
@@ -712,6 +816,8 @@ def connection_panel(config: Dict[str, str]) -> Dict[str, Any]:
         "base_url": normalize_api_base(base_url),
         "api_key": api_key.strip(),
         "model": model.strip(),
+        "active_provider": new_provider_name,
+        "providers": providers,
         "size": size,
         "quality": quality,
         "output_format": output_format,

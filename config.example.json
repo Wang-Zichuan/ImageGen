@@ -1,7 +1,14 @@
 {
-  "base_url": "https://api.openai.com/v1",
-  "api_key": "",
-  "model": "gpt-image-2",
+  "active_provider": "OpenAI",
+  "providers": [
+    {
+      "name": "OpenAI",
+      "base_url": "https://api.openai.com/v1",
+      "api_key": "",
+      "models": ["gpt-image-2", "gpt-image-1"],
+      "active_model": "gpt-image-2"
+    }
+  ],
   "size": "1024x1024",
   "quality": "medium"
 }

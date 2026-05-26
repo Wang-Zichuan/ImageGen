@@ -27,9 +27,16 @@ A local image generation console powered by any OpenAI-compatible API. Generate,
 2. **Configure** — Edit `config.json` and fill in your API key:
    ```json
    {
-     "base_url": "https://api.openai.com/v1",
-     "api_key": "sk-...",
-     "model": "gpt-image-2",
+     "active_provider": "OpenAI",
+     "providers": [
+       {
+         "name": "OpenAI",
+         "base_url": "https://api.openai.com/v1",
+         "api_key": "sk-...",
+         "models": ["gpt-image-2", "gpt-image-1"],
+         "active_model": "gpt-image-2"
+       }
+     ],
      "size": "1024x1024",
      "quality": "medium"
    }
@@ -62,13 +69,13 @@ uv run streamlit run imagegen/app.py --server.port 8502
 
 | Field      | Description                          | Default                  |
 |------------|--------------------------------------|--------------------------|
-| `base_url` | API endpoint                         | `https://api.openai.com/v1` |
-| `api_key`  | Your API key                         | *(required)*             |
-| `model`    | Model name                           | `gpt-image-2`           |
+| `active_provider` | Selected provider name         | `OpenAI`                 |
+| `providers` | Provider list with `name/base_url/api_key/models/active_model` | *(required)* |
 | `size`     | Default image size                   | `1024x1024`             |
 | `quality`  | Image quality (`low/medium/high/auto`) | `medium`              |
 
 You can also set environment variables `OPENAI_BASE_URL` and `OPENAI_API_KEY` instead of `config.json`.
+Legacy `base_url/api_key/model` configs are migrated into a default provider automatically. Use the sidebar to switch providers and models; click `Save Settings` after editing or adding a provider.
 
 ## Transparent Backgrounds
 

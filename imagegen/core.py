@@ -42,22 +42,96 @@ GPT_IMAGE_2_MAX_RATIO = 3.0
 SIZE_RE = re.compile(r"^(\d+)x(\d+)$")
 
 
-def load_config() -> Dict[str, str]:
+def _clean_provider(provider: Dict[str, Any]) -> Dict[str, Any]:
+    name = str(provider.get("name") or "Default").strip() or "Default"
+    models = provider.get("models", [])
+    if isinstance(models, str):
+        models = [part.strip() for part in models.split(",") if part.strip()]
+    if not isinstance(models, list):
+        models = []
+    models = [str(model).strip() for model in models if str(model).strip()]
+    active_model = str(provider.get("active_model") or provider.get("model") or "").strip()
+    if active_model and active_model not in models:
+        models.insert(0, active_model)
+    if not models:
+        models = [DEFAULT_MODEL]
+    if not active_model:
+        active_model = models[0]
+    return {
+        "name": name,
+        "base_url": normalize_api_base(str(provider.get("base_url") or "")),
+        "api_key": str(provider.get("api_key") or "").strip(),
+        "models": models,
+        "active_model": active_model,
+    }
+
+
+def normalize_config(raw: Dict[str, Any]) -> Dict[str, Any]:
+    config = {str(k): v for k, v in raw.items() if v is not None}
+    raw_providers = config.get("providers")
+    providers: List[Dict[str, Any]] = []
+    if isinstance(raw_providers, list):
+        providers = [_clean_provider(provider) for provider in raw_providers if isinstance(provider, dict)]
+
+    if not providers:
+        providers = [
+            _clean_provider(
+                {
+                    "name": config.get("provider") or config.get("provider_name") or "Default",
+                    "base_url": config.get("base_url") or os.getenv("OPENAI_BASE_URL", ""),
+                    "api_key": config.get("api_key") or os.getenv("OPENAI_API_KEY", ""),
+                    "models": config.get("models") or [config.get("model") or os.getenv("IMAGE_GEN_MODEL", DEFAULT_MODEL)],
+                    "active_model": config.get("model") or os.getenv("IMAGE_GEN_MODEL", DEFAULT_MODEL),
+                }
+            )
+        ]
+
+    active_provider = str(config.get("active_provider") or providers[0]["name"]).strip()
+    if active_provider not in {provider["name"] for provider in providers}:
+        active_provider = providers[0]["name"]
+    active = next(provider for provider in providers if provider["name"] == active_provider)
+
+    normalized: Dict[str, Any] = {
+        "providers": providers,
+        "active_provider": active_provider,
+        "base_url": active["base_url"],
+        "api_key": active["api_key"],
+        "model": active["active_model"],
+        "size": str(config.get("size", "1024x1024")),
+        "quality": str(config.get("quality", "medium")),
+        "output_format": str(config.get("output_format", "png")),
+        "n": config.get("n", 1),
+    }
+    for key in ("background", "moderation"):
+        if config.get(key) is not None:
+            normalized[key] = config[key]
+    return normalized
+
+
+def load_config() -> Dict[str, Any]:
     if not CONFIG_PATH.exists():
-        return {}
+        return normalize_config({})
     try:
         raw = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
     except Exception:
-        return {}
-    return {str(k): str(v) for k, v in raw.items() if v is not None}
+        return normalize_config({})
+    if not isinstance(raw, dict):
+        return normalize_config({})
+    return normalize_config(raw)
 
 
 def save_config(settings: Dict[str, Any]) -> None:
     CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    providers = settings.get("providers", [])
+    if not isinstance(providers, list):
+        providers = []
+    providers = [_clean_provider(provider) for provider in providers if isinstance(provider, dict)]
+    active_provider = str(settings.get("active_provider") or "").strip()
+    if active_provider not in {provider["name"] for provider in providers}:
+        active_provider = providers[0]["name"] if providers else "Default"
     data = {
-        "base_url": settings.get("base_url", ""),
-        "api_key": settings.get("api_key", ""),
-        "model": settings.get("model", "gpt-image-2"),
+        "active_provider": active_provider,
+        "providers": providers,
         "size": settings.get("size", "1024x1024"),
         "quality": settings.get("quality", "medium"),
         "output_format": settings.get("output_format", "png"),
@@ -413,7 +487,6 @@ def edit_images(
             "quality": request_settings["quality"],
             "output_format": request_settings["output_format"],
             "background": request_settings.get("background"),
-            "moderation": request_settings.get("moderation"),
         }
         payload = {k: v for k, v in payload.items() if v is not None}
         try:

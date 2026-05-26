@@ -27,9 +27,16 @@
 2. **配置** — 编辑 `config.json`，填入你的 API 信息：
    ```json
    {
-     "base_url": "https://api.openai.com/v1",
-     "api_key": "sk-...",
-     "model": "gpt-image-2-reverse",
+     "active_provider": "OpenAI",
+     "providers": [
+       {
+         "name": "OpenAI",
+         "base_url": "https://api.openai.com/v1",
+         "api_key": "sk-...",
+         "models": ["gpt-image-2", "gpt-image-1"],
+         "active_model": "gpt-image-2"
+       }
+     ],
      "size": "1024x1024",
      "quality": "medium"
    }
@@ -63,13 +70,13 @@ uv run streamlit run imagegen/app.py --server.port 8502
 
 | 字段 | 说明 | 默认值 |
 |------|------|--------|
-| `base_url` | API 接口地址 | `https://api.openai.com/v1` |
-| `api_key` | 你的 API 密钥 | *（必填）* |
-| `model` | 模型名称 | `gpt-image-2` |
+| `active_provider` | 当前选中的 Provider 名称 | `OpenAI` |
+| `providers` | Provider 列表，每项包含 `name/base_url/api_key/models/active_model` | *（必填）* |
 | `size` | 默认图片尺寸 | `1024x1024` |
 | `quality` | 图片质量（low/medium/high/auto） | `medium` |
 
 也可通过环境变量 `OPENAI_BASE_URL` 和 `OPENAI_API_KEY` 配置；如果同时存在 `config.json`，界面会优先加载配置文件中的值。
+旧版 `base_url/api_key/model` 配置会自动迁移为默认 Provider。侧边栏可以直接切换 Provider 和模型；修改或新增 Provider 后点击 `Save Settings` 保存。
 
 ## 透明背景
 
