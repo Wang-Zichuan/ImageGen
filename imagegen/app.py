@@ -82,51 +82,126 @@ def inject_style() -> None:
     st.markdown(
         """
         <style>
-          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+          @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Manrope:wght@400;500;600;700;800&display=swap');
 
           :root {
-            --app-bg: #f8f9fc;
-            --panel: #ffffff;
-            --ink: #0b0f1a;
-            --ink-secondary: #1e293b;
-            --muted: #64748b;
-            --muted-light: #94a3b8;
-            --line: #e2e8f0;
-            --line-light: #f1f5f9;
-            --accent: #6366f1;
-            --accent-hover: #4f46e5;
-            --accent-light: rgba(99, 102, 241, 0.08);
-            --accent-gradient: linear-gradient(135deg, #6366f1, #8b5cf6);
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --shadow-sm: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.03);
-            --shadow-md: 0 4px 16px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04);
-            --shadow-lg: 0 8px 32px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.04);
-            --radius: 12px;
-            --radius-lg: 16px;
-            --radius-xl: 20px;
-            --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            --app-bg: #f6f1e8;
+            --panel: rgba(255, 253, 247, 0.88);
+            --panel-solid: #fffdf7;
+            --ink: #17201c;
+            --ink-secondary: #31413c;
+            --muted: #697872;
+            --muted-light: #9aa79f;
+            --line: rgba(34, 47, 43, 0.12);
+            --line-light: rgba(255, 255, 255, 0.72);
+            --accent: #0f766e;
+            --accent-hover: #115e59;
+            --accent-light: rgba(15, 118, 110, 0.1);
+            --accent-gradient: linear-gradient(135deg, #0f766e 0%, #22a699 54%, #d8a94f 100%);
+            --gold: #c89432;
+            --success: #0f9f6e;
+            --warning: #d89a28;
+            --danger: #c2413d;
+            --shadow-sm: 0 1px 2px rgba(30, 42, 38, 0.06), 0 1px 8px rgba(30, 42, 38, 0.04);
+            --shadow-md: 0 14px 38px rgba(30, 42, 38, 0.09), 0 2px 8px rgba(30, 42, 38, 0.05);
+            --shadow-lg: 0 28px 70px rgba(30, 42, 38, 0.14), 0 10px 24px rgba(30, 42, 38, 0.08);
+            --radius: 14px;
+            --radius-lg: 22px;
+            --radius-xl: 30px;
+            --font: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            --display: 'Instrument Serif', Georgia, serif;
           }
 
           * { font-family: var(--font); }
 
           .stApp {
-            background: linear-gradient(160deg, #f8f9fc 0%, #f1f3f9 40%, #f8f9fc 100%);
+            background:
+              radial-gradient(circle at 8% 8%, rgba(216,169,79,0.26) 0, rgba(216,169,79,0) 30rem),
+              radial-gradient(circle at 88% 12%, rgba(34,166,153,0.2) 0, rgba(34,166,153,0) 28rem),
+              linear-gradient(145deg, #fbf6ec 0%, #f3efe6 48%, #edf4ef 100%);
+            color: var(--ink);
           }
 
-          .stApp > header { display: none; }
+          [data-testid="stDecoration"],
+          [data-testid="stStatusWidget"] {
+            display: none !important;
+          }
+
+          [data-testid="stToolbar"] {
+            background: transparent !important;
+            pointer-events: none !important;
+          }
+
+          [data-testid="stToolbar"] [data-testid="stBaseButton-header"],
+          [data-testid="stToolbar"] [data-testid="stMainMenuButton"] {
+            display: none !important;
+          }
+
+          .stApp > header,
+          header[data-testid="stHeader"],
+          [data-testid="stHeader"] {
+            background: transparent !important;
+            box-shadow: none !important;
+            pointer-events: auto !important;
+            z-index: 999 !important;
+          }
+
+          [data-testid="stBaseButton-headerNoPadding"] {
+            background: rgba(255, 253, 247, 0.84) !important;
+            border: 1px solid rgba(34,47,43,0.12) !important;
+            border-radius: 999px !important;
+            box-shadow: var(--shadow-sm) !important;
+            color: var(--ink-secondary) !important;
+            opacity: 0.88 !important;
+            visibility: visible !important;
+          }
+
+          [data-testid="stBaseButton-headerNoPadding"]:hover {
+            background: rgba(255, 253, 247, 0.98) !important;
+            box-shadow: var(--shadow-md) !important;
+            opacity: 1 !important;
+          }
+
+          [data-testid="stExpandSidebarButton"] {
+            align-items: center !important;
+            background: rgba(255, 253, 247, 0.94) !important;
+            border: 1px solid rgba(34,47,43,0.12) !important;
+            border-radius: 999px !important;
+            box-shadow: var(--shadow-md) !important;
+            color: var(--ink-secondary) !important;
+            display: inline-flex !important;
+            height: 34px !important;
+            justify-content: center !important;
+            left: 18px !important;
+            min-height: 34px !important;
+            min-width: 34px !important;
+            opacity: 1 !important;
+            position: fixed !important;
+            top: 20px !important;
+            visibility: visible !important;
+            width: 34px !important;
+            z-index: 1000 !important;
+            pointer-events: auto !important;
+          }
+
+          [data-testid="stExpandSidebarButton"]:hover {
+            background: rgba(255, 253, 247, 1) !important;
+            box-shadow: var(--shadow-lg) !important;
+          }
 
           .block-container {
-            max-width: 1280px;
-            padding: 1.5rem 2rem 3rem;
+            max-width: 1360px;
+            padding: 1.75rem 2.25rem 4rem;
           }
 
           [data-testid="stSidebar"] {
-            background: rgba(255,255,255,0.85);
-            border-right: 1px solid var(--line);
-            backdrop-filter: blur(24px);
-            padding: 1.5rem 0.5rem;
+            background:
+              linear-gradient(180deg, rgba(255,253,247,0.92), rgba(248,244,236,0.86)),
+              radial-gradient(circle at top left, rgba(216,169,79,0.16), transparent 18rem);
+            border-right: 1px solid rgba(34,47,43,0.1);
+            backdrop-filter: blur(28px);
+            box-shadow: 10px 0 34px rgba(30,42,38,0.05);
+            padding: 1.35rem 0.55rem;
           }
 
           [data-testid="stSidebar"] > div:first-child {
@@ -134,12 +209,12 @@ def inject_style() -> None:
           }
 
           [data-testid="stSidebar"] h2 {
-            font-size: 0.7rem;
+            font-size: 0.68rem;
             font-weight: 700;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.12em;
             text-transform: uppercase;
-            color: var(--muted-light);
-            margin: 1.25rem 0 0.5rem;
+            color: #8a7560;
+            margin: 1.45rem 0 0.55rem;
             padding: 0 0.75rem;
           }
 
@@ -170,15 +245,19 @@ def inject_style() -> None:
           }
 
           .hero {
-            background: var(--panel);
-            border: 1px solid var(--line);
-            border-radius: var(--radius-xl);
-            box-shadow: var(--shadow-md);
+            background:
+              linear-gradient(135deg, rgba(255,253,247,0.96), rgba(255,253,247,0.76)),
+              radial-gradient(circle at 78% 22%, rgba(34,166,153,0.18), transparent 18rem),
+              radial-gradient(circle at 15% 18%, rgba(216,169,79,0.2), transparent 18rem);
+            border: 1px solid rgba(255,255,255,0.78);
+            border-radius: 34px;
+            box-shadow: var(--shadow-lg);
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 1.75rem;
-            padding: 1.5rem 2rem;
+            margin-bottom: 1.55rem;
+            min-height: 210px;
+            padding: 2.2rem 2.35rem;
             position: relative;
             overflow: hidden;
           }
@@ -186,21 +265,64 @@ def inject_style() -> None:
           .hero::before {
             content: '';
             position: absolute;
-            inset: 0;
+            inset: auto -6rem -8rem auto;
+            width: 24rem;
+            height: 24rem;
+            background:
+              linear-gradient(135deg, rgba(15,118,110,0.12), rgba(216,169,79,0.14));
+            border: 1px solid rgba(255,255,255,0.62);
+            border-radius: 999px;
+            opacity: 1;
+            filter: blur(0.2px);
+          }
+
+          .hero::after {
+            content: '';
+            position: absolute;
+            inset: 1px;
+            border-radius: inherit;
+            background:
+              linear-gradient(120deg, rgba(255,255,255,0.74), transparent 34%),
+              linear-gradient(300deg, rgba(15,118,110,0.08), transparent 50%);
+            pointer-events: none;
+          }
+
+          .hero-eyebrow {
+            align-items: center;
+            background: rgba(255,255,255,0.72);
+            border: 1px solid rgba(34,47,43,0.1);
+            border-radius: 999px;
+            color: #7b684e;
+            display: inline-flex;
+            font-size: 0.72rem;
+            font-weight: 800;
+            gap: 0.45rem;
+            letter-spacing: 0.12em;
+            margin-bottom: 0.85rem;
+            padding: 0.38rem 0.78rem;
+            text-transform: uppercase;
+          }
+
+          .hero-eyebrow::before {
+            content: '';
+            width: 0.45rem;
+            height: 0.45rem;
+            border-radius: 999px;
             background: var(--accent-gradient);
-            opacity: 0.04;
+            box-shadow: 0 0 0 5px rgba(15,118,110,0.1);
             border-radius: inherit;
           }
 
           .hero-left { position: relative; z-index: 1; }
 
           .hero h1 {
-            font-size: clamp(1.5rem, 3vw, 2rem);
+            font-family: var(--display);
+            font-size: clamp(3rem, 7vw, 5.8rem);
             font-weight: 800;
-            letter-spacing: -0.02em;
+            letter-spacing: -0.055em;
             color: var(--ink);
             margin: 0;
-            line-height: 1.25;
+            line-height: 0.92;
           }
 
           .hero h1 span {
@@ -212,27 +334,62 @@ def inject_style() -> None:
 
           .hero p {
             color: var(--muted);
-            font-size: 0.875rem;
-            margin: 0.25rem 0 0;
-            line-height: 1.5;
+            font-size: 1rem;
+            margin: 1rem 0 0;
+            line-height: 1.75;
+            max-width: 44rem;
           }
 
           .hero-right {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
+            gap: 0.85rem;
             flex-shrink: 0;
+            position: relative;
+            z-index: 1;
+          }
+
+          .hero-metrics {
+            display: grid;
+            gap: 0.75rem;
+            min-width: 220px;
           }
 
           .status-chip {
-            background: var(--accent-light);
-            border: 1px solid rgba(99,102,241,0.15);
-            border-radius: 999px;
-            color: var(--accent);
-            font-size: 0.75rem;
-            font-weight: 600;
-            padding: 0.4rem 0.9rem;
+            background: rgba(255,255,255,0.72);
+            border: 1px solid rgba(34,47,43,0.1);
+            border-radius: 18px;
+            box-shadow: var(--shadow-sm);
+            color: var(--ink-secondary);
+            font-size: 0.76rem;
+            font-weight: 800;
+            padding: 0.68rem 0.9rem;
             white-space: nowrap;
+          }
+
+          .metric-card {
+            background: rgba(255,255,255,0.62);
+            border: 1px solid rgba(255,255,255,0.78);
+            border-radius: 22px;
+            box-shadow: var(--shadow-sm);
+            padding: 0.95rem 1rem;
+          }
+
+          .metric-card b {
+            color: var(--ink);
+            display: block;
+            font-size: 1.18rem;
+            letter-spacing: -0.03em;
+          }
+
+          .metric-card span {
+            color: var(--muted);
+            display: block;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            margin-top: 0.18rem;
+            text-transform: uppercase;
           }
 
           .status-dot {
@@ -254,18 +411,19 @@ def inject_style() -> None:
           .sidebar-logo {
             display: flex;
             align-items: center;
-            gap: 0.6rem;
-            padding: 0.25rem 0.75rem 0.5rem;
-            margin-bottom: 0.5rem;
+            gap: 0.72rem;
+            padding: 0.2rem 0.75rem 1rem;
+            margin-bottom: 0.3rem;
           }
 
           .sidebar-logo svg {
-            width: 28px;
-            height: 28px;
+            filter: drop-shadow(0 8px 16px rgba(15,118,110,0.16));
+            width: 34px;
+            height: 34px;
           }
 
           .sidebar-logo span {
-            font-size: 1.1rem;
+            font-size: 1.18rem;
             font-weight: 800;
             letter-spacing: -0.02em;
             color: var(--ink);
@@ -274,29 +432,40 @@ def inject_style() -> None:
           .sidebar-logo span small {
             font-size: 0.65rem;
             font-weight: 500;
-            color: var(--muted-light);
+            color: var(--muted);
             letter-spacing: 0;
           }
 
           [data-testid="stTabs"] {
-            margin-top: 0.25rem;
+            margin-top: 0.35rem;
+          }
+
+          [data-testid="stTabs"] [role="tabpanel"] {
+            background:
+              linear-gradient(180deg, rgba(255,253,247,0.82), rgba(255,253,247,0.64));
+            border: 1px solid rgba(255,255,255,0.78);
+            border-radius: 28px;
+            box-shadow: var(--shadow-md);
+            margin-top: 1rem;
+            padding: 1.35rem 1.45rem 1.6rem;
           }
 
           [data-testid="stTabs"] [role="tablist"] {
-            background: var(--line-light);
-            border-radius: var(--radius);
-            border: 1px solid var(--line);
-            gap: 2px;
-            padding: 3px;
+            background: rgba(255,255,255,0.56);
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.8);
+            box-shadow: var(--shadow-sm);
+            gap: 4px;
+            padding: 5px;
           }
 
           [data-testid="stTabs"] button[role="tab"] {
             border: none;
-            border-radius: calc(var(--radius) - 3px);
-            font-size: 0.8125rem;
-            font-weight: 600;
+            border-radius: 999px;
+            font-size: 0.84rem;
+            font-weight: 800;
             color: var(--muted);
-            padding: 0.45rem 1rem;
+            padding: 0.56rem 1.15rem;
             transition: all 0.2s ease;
           }
 
@@ -308,15 +477,16 @@ def inject_style() -> None:
           [data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
             background: var(--panel);
             color: var(--ink);
-            box-shadow: var(--shadow-sm);
+            box-shadow: 0 8px 20px rgba(30,42,38,0.08);
           }
 
           [data-testid="stTextArea"] textarea,
           [data-testid="stTextInput"] input,
           [data-testid="stNumberInput"] input,
           [data-testid="stSelectbox"] div[data-baseweb="select"] > div {
-            border-radius: var(--radius);
-            border: 1.5px solid var(--line);
+            background: rgba(255,255,255,0.74);
+            border-radius: 16px;
+            border: 1px solid rgba(34,47,43,0.12);
             font-size: 0.875rem;
             transition: border-color 0.2s ease, box-shadow 0.2s ease;
           }
@@ -325,13 +495,13 @@ def inject_style() -> None:
           [data-testid="stTextInput"] input:focus,
           [data-testid="stNumberInput"] input:focus,
           [data-testid="stSelectbox"] div[data-baseweb="select"] > div:focus-within {
-            border-color: var(--accent);
-            box-shadow: 0 0 0 3px var(--accent-light);
+            border-color: rgba(15,118,110,0.45);
+            box-shadow: 0 0 0 4px rgba(15,118,110,0.1);
           }
 
           .stButton button,
           .stDownloadButton button {
-            border-radius: var(--radius);
+            border-radius: 15px;
             font-weight: 600;
             font-size: 0.875rem;
             height: 2.5rem;
@@ -339,18 +509,18 @@ def inject_style() -> None:
           }
 
           .stButton button[kind="primary"] {
-            background: var(--accent-gradient);
+            background: linear-gradient(135deg, #0f766e 0%, #1f9d90 48%, #d4a349 100%);
             color: #fff;
             border: none;
-            box-shadow: 0 4px 14px rgba(99,102,241,0.3);
-            height: 2.75rem;
+            box-shadow: 0 15px 32px rgba(15,118,110,0.24), inset 0 1px 0 rgba(255,255,255,0.28);
+            height: 2.95rem;
             font-weight: 700;
             font-size: 0.9375rem;
           }
 
           .stButton button[kind="primary"]:hover {
             transform: translateY(-1px);
-            box-shadow: 0 6px 20px rgba(99,102,241,0.4);
+            box-shadow: 0 18px 40px rgba(15,118,110,0.28), inset 0 1px 0 rgba(255,255,255,0.28);
           }
 
           .stButton button[kind="primary"]:active {
@@ -363,19 +533,22 @@ def inject_style() -> None:
           }
 
           [data-testid="baseButton-secondary"] {
-            border: 1.5px solid var(--line) !important;
+            background: rgba(255,255,255,0.72) !important;
+            border: 1px solid rgba(34,47,43,0.12) !important;
+            box-shadow: var(--shadow-sm);
           }
 
           [data-testid="stExpander"] {
-            border: 1px solid var(--line);
-            border-radius: var(--radius);
-            background: var(--panel);
-            margin: 0.75rem 0;
+            border: 1px solid rgba(255,255,255,0.76);
+            border-radius: 22px;
+            background: rgba(255,253,247,0.72);
+            box-shadow: var(--shadow-sm);
+            margin: 0.9rem 0;
           }
 
           [data-testid="stExpander"] summary {
             font-weight: 600;
-            font-size: 0.8125rem;
+            font-size: 0.84rem;
             color: var(--ink-secondary);
             padding: 0.6rem 1rem;
           }
@@ -385,8 +558,8 @@ def inject_style() -> None:
           }
 
           .section-title {
-            font-size: 1rem;
-            font-weight: 700;
+            font-size: 1.08rem;
+            font-weight: 800;
             color: var(--ink);
             margin: 0 0 0.25rem;
           }
@@ -399,8 +572,8 @@ def inject_style() -> None:
           }
 
           .uploaded-pill {
-            background: var(--accent-light);
-            border: 1px solid rgba(99,102,241,0.12);
+            background: rgba(15,118,110,0.1);
+            border: 1px solid rgba(15,118,110,0.12);
             border-radius: 999px;
             color: var(--accent);
             display: inline-block;
@@ -411,10 +584,10 @@ def inject_style() -> None:
           }
 
           .history-card {
-            background: var(--panel);
-            border: 1px solid var(--line);
-            border-radius: var(--radius-lg);
-            padding: 1.25rem;
+            background: rgba(255,253,247,0.78);
+            border: 1px solid rgba(255,255,255,0.78);
+            border-radius: 24px;
+            padding: 1.35rem;
             margin-bottom: 1rem;
             box-shadow: var(--shadow-sm);
             transition: box-shadow 0.2s ease;
@@ -431,8 +604,8 @@ def inject_style() -> None:
 
           .history-mode-badge {
             display: inline-block;
-            background: var(--accent-light);
-            border-radius: 6px;
+            background: rgba(15,118,110,0.1);
+            border-radius: 999px;
             color: var(--accent);
             font-size: 0.6875rem;
             font-weight: 600;
@@ -449,13 +622,13 @@ def inject_style() -> None:
           }
 
           .stAlert {
-            border-radius: var(--radius);
+            border-radius: 18px;
             border: none;
           }
 
           [data-testid="stAlert"] {
-            border-radius: var(--radius);
-            padding: 0.75rem 1rem;
+            border-radius: 18px;
+            padding: 0.85rem 1rem;
           }
 
           .stAlert > div:first-child {
@@ -463,13 +636,13 @@ def inject_style() -> None:
           }
 
           [data-testid="stImage"] {
-            border-radius: var(--radius);
+            border-radius: 22px;
             overflow: hidden;
             box-shadow: var(--shadow-sm);
           }
 
           [data-testid="stImage"] img {
-            border-radius: var(--radius);
+            border-radius: 22px;
             transition: transform 0.3s ease;
           }
 
@@ -479,7 +652,7 @@ def inject_style() -> None:
 
           .stDownloadButton button {
             background: var(--panel);
-            border: 1.5px solid var(--line);
+            border: 1px solid rgba(34,47,43,0.12);
             font-size: 0.8125rem;
             height: 2.25rem;
           }
@@ -524,22 +697,22 @@ def inject_style() -> None:
           }
 
           [data-testid="stFileUploader"] section {
-            border: 1.5px dashed var(--line);
-            border-radius: var(--radius);
-            padding: 0.75rem;
-            background: var(--line-light);
+            border: 1px dashed rgba(15,118,110,0.28);
+            border-radius: 22px;
+            padding: 1rem;
+            background: rgba(255,255,255,0.58);
             transition: border-color 0.2s ease, background 0.2s ease;
           }
 
           [data-testid="stFileUploader"] section:hover {
-            border-color: var(--accent);
-            background: var(--accent-light);
+            border-color: rgba(15,118,110,0.48);
+            background: rgba(15,118,110,0.08);
           }
 
           [data-testid="stFileUploader"] button {
             background: var(--panel);
             border: 1px solid var(--line);
-            border-radius: var(--radius);
+            border-radius: 14px;
             font-size: 0.8125rem;
           }
 
@@ -1192,7 +1365,7 @@ def main() -> None:
           <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
             <rect width="32" height="32" rx="8" fill="url(#glogo)"/>
             <path d="M16 6c-2 0-3.5 1.5-3.5 3.5 0 1.2.6 2.3 1.5 2.9v2.1l-4 2.3v-4.4a3.5 3.5 0 10-2 0v6.2l6 3.5V24a3.5 3.5 0 102 0v-1.9l4-2.3v-4.4a3.5 3.5 0 001.5-2.9C19.5 7.5 18 6 16 6z" fill="#fff"/>
-            <defs><linearGradient id="glogo" x1="0" y1="0" x2="32" y2="32"><stop stop-color="#6366f1"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs>
+            <defs><linearGradient id="glogo" x1="0" y1="0" x2="32" y2="32"><stop stop-color="#0f766e"/><stop offset="0.58" stop-color="#22a699"/><stop offset="1" stop-color="#d8a94f"/></linearGradient></defs>
           </svg>
           <span>ImageGen <small>v0.1</small></span>
         </div>
@@ -1212,11 +1385,16 @@ def main() -> None:
         """
         <div class="hero">
           <div class="hero-left">
+            <div class="hero-eyebrow">AI image operations studio</div>
             <h1>Image<span>Gen</span></h1>
-            <p>Local image generation console \u2014 create, edit, and batch-generate with any OpenAI-compatible API.</p>
+            <p>Create, refine, and batch-produce polished visual assets through a premium local console built for OpenAI-compatible providers.</p>
           </div>
           <div class="hero-right">
-            <div class="status-chip"><span class="status-dot"></span>API Connected</div>
+            <div class="hero-metrics">
+              <div class="status-chip"><span class="status-dot"></span>Provider ready</div>
+              <div class="metric-card"><b>Generate</b><span>Text to image</span></div>
+              <div class="metric-card"><b>Edit</b><span>Reference guided</span></div>
+            </div>
           </div>
         </div>
         """,
