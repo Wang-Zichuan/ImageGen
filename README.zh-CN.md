@@ -92,6 +92,10 @@ uv run remove-chroma-key input.png output.png --key "#00ff00" --soft-matte --des
 uv run python remove_chroma_key.py input.png output.png --auto-key border --soft-matte --despill
 ```
 
+## 界面截图
+
+![ImageGen 界面](assets/ui-screenshot.png)
+
 ## 项目结构
 
 ```

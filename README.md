@@ -93,7 +93,7 @@ uv run python remove_chroma_key.py input.png output.png --auto-key border --soft
 
 ## Screenshots
 
-> *(Add screenshots here after first run)*
+![ImageGen interface](assets/ui-screenshot.png)
 
 ## Project Structure
 
