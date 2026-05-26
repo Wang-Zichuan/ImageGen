@@ -39,6 +39,11 @@ clipboard_image = components.declare_component(
     "clipboard_image",
     path=str(CLIPBOARD_COMPONENT_DIR),
 )
+REFINE_STATE_KEY = "pending_refine"
+REFINE_NOTICE_STATE_KEY = "pending_refine_notice"
+GENERATE_RESULT_STATE_KEY = "last_generate_result"
+EDIT_RESULT_STATE_KEY = "last_edit_result"
+BATCH_RESULT_STATE_KEY = "last_batch_result"
 
 RATIO_PRESETS: Dict[str, Tuple[int, int]] = {
     "\u81ea\u52a8": (0, 0),
@@ -76,6 +81,42 @@ USE_CASES = [
 class ReferenceImage(NamedTuple):
     name: str
     data: bytes
+
+
+def start_refine_from_image(
+    image_bytes: bytes,
+    *,
+    name: str,
+    source_prompt: str,
+    source_augmented_prompt: str,
+    source_settings: Dict[str, Any],
+    source_mode: str,
+) -> None:
+    st.session_state[REFINE_STATE_KEY] = {
+        "name": name,
+        "image_bytes": image_bytes,
+        "source_prompt": source_prompt,
+        "source_augmented_prompt": source_augmented_prompt,
+        "source_settings": dict(source_settings or {}),
+        "source_mode": source_mode,
+    }
+    st.session_state[REFINE_NOTICE_STATE_KEY] = "\u5df2\u9001\u5165\u56fe\u751f\u56fe\uff0c\u8bf7\u5207\u6362\u5230\u201c\u56fe\u751f\u56fe\u201d\u7ee7\u7eed\u4fee\u6539\u3002"
+
+
+def build_refine_prompt(user_change: str, refine_context: Dict[str, Any]) -> str:
+    source_prompt = (
+        refine_context.get("source_augmented_prompt")
+        or refine_context.get("source_prompt")
+        or ""
+    ).strip()
+    context_block = f"Original intent/context:\n{source_prompt}\n\n" if source_prompt else ""
+    return (
+        "Use the provided reference image as the current version to refine.\n"
+        "Preserve the subject identity, composition, camera angle, visual style, lighting direction, color relationships, and important details unless the requested change explicitly modifies them.\n"
+        f"{context_block}"
+        f"Requested change:\n{user_change.strip()}\n\n"
+        "Apply only the requested change. Avoid unnecessary redesigns, new objects, text, watermarks, or composition drift."
+    )
 
 
 def inject_style() -> None:
@@ -1045,7 +1086,13 @@ def prompt_panel(key_prefix: str) -> Tuple[str, Dict[str, Optional[str]], bool]:
     return prompt.strip(), fields, augment
 
 
-def render_gallery(images: List[bytes], output_format: str) -> None:
+def render_gallery(
+    images: List[bytes],
+    output_format: str,
+    *,
+    refine_context: Optional[Dict[str, Any]] = None,
+    key_prefix: str = "gallery",
+) -> None:
     if not images:
         return
 
@@ -1061,8 +1108,22 @@ def render_gallery(images: List[bytes], output_format: str) -> None:
                 data=image_bytes,
                 file_name=filename,
                 mime=f"image/{output_format}",
-                key=f"download-{index}-{len(images)}",
+                key=f"{key_prefix}-download-{index}-{len(images)}",
             )
+            if refine_context and st.button(
+                "\u7ee7\u7eed\u7f16\u8f91",
+                key=f"{key_prefix}-refine-{index}-{len(images)}",
+                width='stretch',
+            ):
+                start_refine_from_image(
+                    image_bytes,
+                    name=f"refine_source_{index}.{ext}",
+                    source_prompt=refine_context.get("prompt", ""),
+                    source_augmented_prompt=refine_context.get("augmented_prompt", ""),
+                    source_settings=refine_context.get("settings", {}),
+                    source_mode=refine_context.get("mode", ""),
+                )
+                st.success(st.session_state.get(REFINE_NOTICE_STATE_KEY, "\u5df2\u9001\u5165\u56fe\u751f\u56fe\u3002"))
 
 
 def render_reference_picker(key_prefix: str) -> List[ReferenceImage]:
@@ -1140,7 +1201,23 @@ def tab_generate(settings: Dict[str, Any], config: Dict[str, str]) -> None:
                 return
         st.caption(f"\u8fde\u63a5\u65b9\u5f0f\uff1a{transport}")
         output_format = effective_output_format(settings)
-        render_gallery(images, output_format)
+        refine_context = {
+            "mode": "generate",
+            "prompt": prompt,
+            "augmented_prompt": final_prompt,
+            "settings": settings,
+        }
+        st.session_state[GENERATE_RESULT_STATE_KEY] = {
+            "images": images,
+            "output_format": output_format,
+            "refine_context": refine_context,
+        }
+        render_gallery(
+            images,
+            output_format,
+            refine_context=refine_context,
+            key_prefix="generate",
+        )
 
         save_to_history(
             mode="generate",
@@ -1150,14 +1227,49 @@ def tab_generate(settings: Dict[str, Any], config: Dict[str, str]) -> None:
             image_bytes_list=images,
             output_format=output_format,
         )
+    elif st.session_state.get(GENERATE_RESULT_STATE_KEY):
+        result = st.session_state[GENERATE_RESULT_STATE_KEY]
+        st.markdown('<p class="section-title">\u6700\u8fd1\u751f\u6210\u7ed3\u679c</p>', unsafe_allow_html=True)
+        render_gallery(
+            result["images"],
+            result["output_format"],
+            refine_context=result.get("refine_context"),
+            key_prefix="generate",
+        )
 
 
 def tab_edit(settings: Dict[str, Any], config: Dict[str, str]) -> None:
+    if st.session_state.get(REFINE_NOTICE_STATE_KEY):
+        st.success(st.session_state.pop(REFINE_NOTICE_STATE_KEY))
+
     references = render_reference_picker("edit")
+    pending_refine = st.session_state.get(REFINE_STATE_KEY)
+    if pending_refine and pending_refine.get("image_bytes"):
+        source_ref = ReferenceImage(
+            name=pending_refine.get("name") or "refine_source.png",
+            data=pending_refine["image_bytes"],
+        )
+        references = [source_ref] + references
+        st.info(
+            "\u5df2\u5c06\u4e0a\u4e00\u5f20\u56fe\u4f5c\u4e3a\u5f53\u524d\u7248\u672c\u53c2\u8003\u56fe\u3002\u8bf7\u8f93\u5165\u4f60\u60f3\u4fee\u6539\u7684\u5185\u5bb9\uff0c\u7cfb\u7edf\u4f1a\u81ea\u52a8\u4fdd\u7559\u4e3b\u4f53\u3001\u6784\u56fe\u3001\u98ce\u683c\u548c\u5149\u7ebf\u3002"
+        )
+        with st.expander("\u5ef6\u7eed\u4e0a\u4e0b\u6587", expanded=False):
+            st.image(source_ref.data, caption=source_ref.name, width=240)
+            source_prompt = (
+                pending_refine.get("source_augmented_prompt")
+                or pending_refine.get("source_prompt")
+                or "\u65e0\u539f\u59cb\u63d0\u793a\u8bcd"
+            )
+            st.code(source_prompt, language="text")
+            if st.button("\u53d6\u6d88\u7ee7\u7eed\u7f16\u8f91", key="cancel-pending-refine"):
+                st.session_state.pop(REFINE_STATE_KEY, None)
+                st.rerun()
+
     edit_prompt, edit_fields, edit_augment = prompt_panel("edit")
     final_edit_prompt = augment_prompt_fields(edit_augment, edit_prompt, edit_fields) if edit_prompt else ""
+    request_prompt = build_refine_prompt(final_edit_prompt, pending_refine) if pending_refine and final_edit_prompt else final_edit_prompt
     with st.expander("\u6700\u7ec8\u7f16\u8f91\u63d0\u793a\u8bcd", expanded=False):
-        st.code(final_edit_prompt or "\u8bf7\u8f93\u5165\u7f16\u8f91\u63d0\u793a\u8bcd", language="text")
+        st.code(request_prompt or "\u8bf7\u8f93\u5165\u7f16\u8f91\u63d0\u793a\u8bcd", language="text")
 
     can_edit = bool(edit_prompt) and bool(references)
     if st.button("\u7f16\u8f91\u56fe\u7247", type="primary", disabled=not can_edit):
@@ -1173,30 +1285,56 @@ def tab_edit(settings: Dict[str, Any], config: Dict[str, str]) -> None:
 
             with st.spinner("\u6b63\u5728\u7f16\u8f91\u56fe\u7247..."):
                 try:
-                    images, transport = edit_images(settings, final_edit_prompt, temp_paths)
+                    images, transport = edit_images(settings, request_prompt, temp_paths)
                 except Exception as exc:
                     st.error(f"\u7f16\u8f91\u5931\u8d25\uff1a{exc}")
                     return
             st.caption(f"\u8fde\u63a5\u65b9\u5f0f\uff1a{transport}")
             output_format = effective_output_format(settings)
-            render_gallery(images, output_format)
+            refine_context = {
+                "mode": "edit",
+                "prompt": edit_prompt,
+                "augmented_prompt": request_prompt,
+                "settings": settings,
+            }
+            st.session_state[EDIT_RESULT_STATE_KEY] = {
+                "images": images,
+                "output_format": output_format,
+                "refine_context": refine_context,
+            }
+            render_gallery(
+                images,
+                output_format,
+                refine_context=refine_context,
+                key_prefix="edit",
+            )
 
             ref_names = [ref.name for ref in references]
             save_to_history(
                 mode="edit",
                 prompt=edit_prompt,
-                augmented_prompt=final_edit_prompt,
+                augmented_prompt=request_prompt,
                 settings=settings,
                 image_bytes_list=images,
                 output_format=output_format,
                 references=ref_names,
             )
+            st.session_state.pop(REFINE_STATE_KEY, None)
         finally:
             for path in temp_paths:
                 try:
                     path.unlink(missing_ok=True)
                 except Exception:
                     pass
+    elif st.session_state.get(EDIT_RESULT_STATE_KEY):
+        result = st.session_state[EDIT_RESULT_STATE_KEY]
+        st.markdown('<p class="section-title">\u6700\u8fd1\u7f16\u8f91\u7ed3\u679c</p>', unsafe_allow_html=True)
+        render_gallery(
+            result["images"],
+            result["output_format"],
+            refine_context=result.get("refine_context"),
+            key_prefix="edit",
+        )
 
 
 def tab_batch(settings: Dict[str, Any], config: Dict[str, str]) -> None:
@@ -1253,7 +1391,7 @@ def tab_batch(settings: Dict[str, Any], config: Dict[str, str]) -> None:
 
             try:
                 images, transport = generate_images(settings, final_prompt)
-                all_results.append((raw_prompt, images, transport))
+                all_results.append((raw_prompt, final_prompt, images, transport))
 
                 output_format = effective_output_format(settings)
                 save_to_history(
@@ -1266,20 +1404,51 @@ def tab_batch(settings: Dict[str, Any], config: Dict[str, str]) -> None:
                 )
             except Exception as exc:
                 st.error(f"\u7b2c {idx + 1} \u4e2a\u63d0\u793a\u8bcd\u751f\u6210\u5931\u8d25\uff1a{exc}")
-                all_results.append((raw_prompt, None, str(exc)))
+                all_results.append((raw_prompt, final_prompt, None, str(exc)))
 
         progress_bar.progress(1.0)
         status_text.text("\u6279\u91cf\u751f\u6210\u5b8c\u6210\uff01")
+        st.session_state[BATCH_RESULT_STATE_KEY] = all_results
 
         if all_results:
             st.divider()
-            for idx, (raw_prompt, images, transport) in enumerate(all_results, start=1):
+            for idx, (raw_prompt, final_prompt, images, transport) in enumerate(all_results, start=1):
                 st.subheader(f"#{idx}: {raw_prompt[:60]}")
                 if images is None:
                     st.error(f"\u751f\u6210\u5931\u8d25: {transport}")
                 else:
                     st.caption(f"\u8fde\u63a5\u65b9\u5f0f\uff1a{transport}")
-                    render_gallery(images, effective_output_format(settings))
+                    render_gallery(
+                        images,
+                        effective_output_format(settings),
+                        refine_context={
+                            "mode": "batch",
+                            "prompt": raw_prompt,
+                            "augmented_prompt": final_prompt,
+                            "settings": settings,
+                        },
+                        key_prefix=f"batch-{idx}",
+                    )
+    elif st.session_state.get(BATCH_RESULT_STATE_KEY):
+        all_results = st.session_state[BATCH_RESULT_STATE_KEY]
+        st.markdown('<p class="section-title">\u6700\u8fd1\u6279\u91cf\u7ed3\u679c</p>', unsafe_allow_html=True)
+        for idx, (raw_prompt, final_prompt, images, transport) in enumerate(all_results, start=1):
+            st.subheader(f"#{idx}: {raw_prompt[:60]}")
+            if images is None:
+                st.error(f"\u751f\u6210\u5931\u8d25: {transport}")
+            else:
+                st.caption(f"\u8fde\u63a5\u65b9\u5f0f\uff1a{transport}")
+                render_gallery(
+                    images,
+                    effective_output_format(settings),
+                    refine_context={
+                        "mode": "batch",
+                        "prompt": raw_prompt,
+                        "augmented_prompt": final_prompt,
+                        "settings": settings,
+                    },
+                    key_prefix=f"batch-{idx}",
+                )
 
 
 def tab_history(settings: Dict[str, Any]) -> None:
@@ -1341,15 +1510,30 @@ def tab_history(settings: Dict[str, Any]) -> None:
                 img_path = image_dir / img_file if isinstance(image_dir, Path) else Path(str(image_dir)) / img_file
                 if img_path.exists():
                     with img_cols[idx % len(img_cols)]:
+                        image_bytes = img_path.read_bytes()
                         st.image(str(img_path), width='stretch')
-                        with open(str(img_path), "rb") as f:
-                            st.download_button(
-                                "\u4e0b\u8f7d",
-                                data=f.read(),
-                                file_name=img_file,
-                                mime=f"image/{entry.settings.get('output_format', 'png')}",
-                                key=f"hdl-{entry.id}-{img_file}",
+                        st.download_button(
+                            "\u4e0b\u8f7d",
+                            data=image_bytes,
+                            file_name=img_file,
+                            mime=f"image/{entry.settings.get('output_format', 'png')}",
+                            key=f"hdl-{entry.id}-{img_file}",
+                        )
+                        if st.button(
+                            "\u7ee7\u7eed\u7f16\u8f91",
+                            key=f"hrefine-{entry.id}-{img_file}",
+                            width='stretch',
+                        ):
+                            start_refine_from_image(
+                                image_bytes,
+                                name=img_file,
+                                source_prompt=entry.prompt,
+                                source_augmented_prompt=entry.augmented_prompt,
+                                source_settings=entry.settings,
+                                source_mode=entry.mode,
                             )
+                            st.success(st.session_state.get(REFINE_NOTICE_STATE_KEY, "\u5df2\u9001\u5165\u56fe\u751f\u56fe\u3002"))
+                            st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
 
 
